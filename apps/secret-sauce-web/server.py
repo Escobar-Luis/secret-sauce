@@ -23,7 +23,6 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-import anyio
 import httpx2
 import uvicorn
 from starlette.applications import Starlette
@@ -356,9 +355,9 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
             health = await http.get(BISTRO_URL.rsplit("/mcp", 1)[0] + "/health", timeout=8)
             if health.status_code != 200:
                 raise RuntimeError(f"health {health.status_code}")
-            with anyio.fail_after(15):
-                bistro = await stack.enter_async_context(bistro_client())
-                listed = await bistro.list_tools()
+            # no anyio timeout here: it breaks the MCP client's task group; /health above guards a dead tunnel
+            bistro = await stack.enter_async_context(bistro_client())
+            listed = await bistro.list_tools()
             mcp_tools = [
                 {
                     "type": "function",
