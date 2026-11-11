@@ -31,7 +31,31 @@
   .chatcol { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   main { flex: 1; overflow-y: auto; }
   aside { width: 400px; border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 14px; font-size: 13px; }
-  body.nolab aside { display: none; }
+  body.nolab aside#lab { display: none; }
+  aside#data { width: 360px; border-left: none; border-right: 1px solid var(--line); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  body.nodata aside#data { display: none; }
+  .dcard { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; margin-bottom: 10px; }
+  .dcard.hl { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .dcard .dn { color: var(--text); font-weight: 600; font-size: 12px; }
+  .dcard .dw { color: var(--muted); font-family: -apple-system, sans-serif; font-size: 12px; margin: 2px 0 4px; }
+  .dcard .da { color: var(--accent); word-break: break-word; }
+  .dcard .dm { color: var(--muted); margin-top: 4px; }
+  .dtab { overflow-x: auto; margin-top: 6px; }
+  .dtab table { border-collapse: collapse; font-size: 10.5px; }
+  .dtab th, .dtab td { border: 1px solid var(--line); padding: 2px 5px; text-align: left; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .dtab th { background: var(--panel2); color: var(--muted); }
+  .call { cursor: pointer; }
+  .banner { background: #1f1a10; border: 1px solid #5a4520; border-radius: 10px; padding: 10px 12px; color: var(--text); font-size: 12.5px; margin-bottom: 4px; }
+  .banner button { display: block; margin-top: 8px; background: var(--accent); color: #1a1206; border: none; border-radius: 7px; padding: 6px 12px; font-weight: 600; font-size: 12.5px; }
+  .banner button:disabled { opacity: .45; cursor: default; }
+  .steps { margin-top: 8px; }
+  .step { display: flex; gap: 8px; padding: 5px 0; color: var(--muted); align-items: baseline; }
+  .step .n { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; flex: none; }
+  .step.on { color: var(--text); }
+  .step.on .n { background: var(--ok); color: #06180f; border-color: var(--ok); }
+  .step.cur .n { border-color: var(--accent); color: var(--accent); }
+  .step .c { color: var(--ok); font-size: 12px; }
+  .now { margin-top: 6px; color: var(--accent); font-size: 12.5px; }
   @media (max-width: 900px) { aside { display: none; } body.showlab aside { display: block; width: 100%; } body.showlab .chatcol { display: none; } }
   aside h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 16px 0 8px; font-weight: 600; }
   aside h3:first-child { margin-top: 0; }
@@ -111,10 +135,16 @@
   <h1>Secret <span>Sauce</span></h1>
   <a id="tee" class="badge" target="_blank" rel="noopener" title="Checking NEAR attestation…">🔒 Private: NEAR Confidential TEE <span id="teeMark">…</span></a>
   <div class="spacer"></div>
+  <button class="ghost" id="dataToggle" title="Show or hide what NEAR read">Data</button>
   <button class="ghost" id="labToggle" title="Show or hide the Training pane">Training</button>
   <button class="ghost" id="newChat" title="Save this chat as a lesson and start fresh">New chat</button>
 </header>
-<div class="wrap"><div class="chatcol">
+<div class="wrap">
+<aside id="data">
+  <h3>What data did NEAR read?</h3>
+  <div id="dcards"><div style="color:var(--muted)">Ask a question. Each tool NEAR calls shows up here with the rows it got back.</div></div>
+</aside>
+<div class="chatcol">
 <main id="scroller">
   <div id="list">
     <div class="empty" id="empty">
@@ -138,6 +168,11 @@
 </footer>
 </div>
 <aside id="lab">
+  <div class="banner">Training runs only when you click <b>Teach from this chat</b>. Reading data does not change the model.
+    <button id="bannerTeach" disabled>🎓 Teach from this chat</button>
+    <div class="steps" id="steps" style="display:none"></div>
+    <div class="now" id="now"></div>
+  </div>
   <h3>Student model</h3>
   <div class="card" id="mcard">…</div>
   <h3>Exam score</h3>
@@ -184,7 +219,7 @@ function renderBot(el, turn) {
   if (turn.trace?.length) {
     html += `<details class="trace"><summary>What NEAR looked at · ${turn.trace.length} tool call${turn.trace.length === 1 ? "" : "s"}</summary>`;
     for (const c of turn.trace) {
-      html += `<div class="call ${c.error ? "err" : ""}"><span class="src">${esc(c.source)}</span>
+      html += `<div class="call ${c.error ? "err" : ""}" data-card="${c.card ?? ""}"><span class="src">${esc(c.source)}</span>
         <div><span class="name">${esc(c.tool)}</span> <span class="args">${esc(argText(c.args))}</span></div>
         <span class="rows">${esc(rowsText(c))}</span></div>`;
     }
@@ -196,6 +231,7 @@ function renderBot(el, turn) {
       <button data-id="${esc(p.id)}">Approve</button></div>`;
   }
   el.innerHTML = html;
+  bindChips(el);
   el.querySelector(".teach")?.addEventListener("click", () => send("🎓 Teach from this chat", true));
   el.querySelectorAll(".proposal button").forEach((b) =>
     b.addEventListener("click", async () => {
@@ -208,6 +244,8 @@ function renderBot(el, turn) {
 
 async function send(text, teach = false) {
   if (busy || !text.trim()) return;
+  if (teach) lapStart(); else clearCards();
+  $("#bannerTeach").disabled = true;
   busy = true; sendBtn.disabled = true;
   addUser(text);
   input.value = ""; input.style.height = "";
@@ -219,7 +257,7 @@ async function send(text, teach = false) {
   const drawLive = () => {
     el.innerHTML = `<div class="thinking">${esc(live.label)}</div>` + (live.calls.length
       ? `<details class="trace" open><summary>What NEAR is looking at</summary>${live.calls.map((c) =>
-          `<div class="call ${c.error ? "err" : ""}"><span class="src">${esc(c.source)}</span>
+          `<div class="call ${c.error ? "err" : ""}" data-card="${c.card}"><span class="src">${esc(c.source)}</span>
            <div><span class="name">${esc(c.tool)}</span> <span class="args">${esc(argText(c.args))}</span></div>
            <span class="rows">${c.done ? esc(rowsText(c)) : "running…"}</span></div>`).join("")}</details>`
       : "");
@@ -241,9 +279,9 @@ async function send(text, teach = false) {
         const ev = JSON.parse(line);
         if (ev.session_id) sessionId = ev.session_id;
         if (ev.type === "thinking") { live.label = ev.round === 1 ? "NEAR is planning" : "NEAR is reading the results"; drawLive(); }
-        else if (ev.type === "tool_start") { live.calls.push({ ...ev }); live.label = `Running ${ev.tool}`; drawLive(); }
-        else if (ev.type === "tool_done") { Object.assign(live.calls[live.calls.length - 1] || {}, ev, { done: true }); drawLive(); }
-        else if (ev.type === "done") { renderBot(el, { ...ev, teach }); finished = true; }
+        else if (ev.type === "tool_start") { const card = dataCardStart(ev); live.calls.push({ ...ev, card }); live.label = `Running ${ev.tool}`; drawLive(); bindChips(el); }
+        else if (ev.type === "tool_done") { const c = live.calls[live.calls.length - 1] || {}; Object.assign(c, ev, { done: true }); dataCardDone(c.card, ev); drawLive(); bindChips(el); }
+        else if (ev.type === "done") { ev.trace.forEach((t, i) => (t.card = live.calls[i]?.card)); renderBot(el, { ...ev, teach }); finished = true; if (teach) lapDone(); }
         else if (ev.type === "error") throw new Error(ev.error);
       }
     }
@@ -252,6 +290,7 @@ async function send(text, teach = false) {
     el.innerHTML = `<div class="error">Something went wrong: ${esc(e.message)}</div>`;
   } finally {
     busy = false; sendBtn.disabled = false; scrollDown(); input.focus();
+    $("#bannerTeach").disabled = !sessionId;
   }
 }
 
@@ -267,6 +306,93 @@ input.addEventListener("input", () => { input.style.height = "auto"; input.style
 document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => send(c.textContent)));
 $("#newChat").addEventListener("click", () => { endSession(); location.reload(); });
 window.addEventListener("pagehide", endSession);
+
+// ---------------- Data panel (left)
+const TOOL_INFO = {
+  get_pnl: "Profit and loss: income and costs per month and per account.",
+  dish_rankings: "Dishes ranked by revenue, with how many were sold.",
+  get_orders: "Point-of-sale orders: receipt, date, total, tax, state.",
+  get_sessions: "Weekly register sessions with order counts.",
+  get_cash_differences: "Drawer count vs. expected cash, per register session.",
+  get_stock_levels: "Ingredients on hand in the stockroom.",
+  get_bills: "Supplier bills and whether they are paid.",
+  get_employees: "Staff list: name, job, department.",
+  get_maintenance: "Equipment repair requests.",
+  search_records: "Free search over an allowed accounting or sales table.",
+  list_files: "Lists files in your private data folder.",
+  read_file: "Reads one file from your private data folder.",
+  search_files: "Finds a word across your private files.",
+  propose_memory_update: "Suggests a note for long-term memory (needs your OK).",
+  propose_playbook_rule: "Suggests a new house rule (needs your OK).",
+  lab_add_lesson: "Saves a practice question and NEAR's answer for the local model.",
+  lab_ask_student: "Asks the local model on this Mac a question.",
+  lab_run_exam: "Local model takes the held-out exam; scored against NEAR.",
+  lab_teach: "Edits one layer of the local model's weights on this Mac.",
+  lab_revert_last: "Undoes the last weight edit.",
+  lab_status: "Local model info: layers, lessons, active edits.",
+};
+let cardSeq = 0;
+function clearCards() { $("#dcards").innerHTML = ""; }
+function dataCardStart(ev) {
+  const id = ++cardSeq;
+  if ($("#dcards").firstElementChild && !$("#dcards").querySelector(".dcard")) clearCards();
+  const d = document.createElement("div");
+  d.className = "dcard"; d.id = "card-" + id;
+  d.innerHTML = `<div class="dn">${esc(ev.tool)} <span style="color:var(--muted);font-weight:400">· ${esc(ev.source)}</span></div>
+    <div class="dw">${esc(TOOL_INFO[ev.tool] || "Tool from the Bistro server.")}</div>
+    <div class="da">${esc(argText(ev.args))}</div><div class="dm">running…</div>`;
+  $("#dcards").appendChild(d);
+  d.scrollIntoView({ block: "nearest" });
+  return id;
+}
+function dataCardDone(id, ev) {
+  const d = document.getElementById("card-" + id);
+  if (!d) return;
+  const p = ev.preview || { columns: [], rows: [], total: 0 };
+  const more = p.total > p.rows.length ? `<div class="dm">+${p.total - p.rows.length} more</div>` : "";
+  const table = p.rows.length ? `<div class="dtab"><table><tr>${p.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr>${p.rows.map((r) => `<tr>${r.map((v) => `<td title="${esc(v)}">${esc(v)}</td>`).join("")}</tr>`).join("")}</table></div>${more}` : "";
+  d.querySelector(".dm").textContent = `${ev.error ? "error · " : ""}${ev.rows ?? p.total} row${(ev.rows ?? p.total) === 1 ? "" : "s"} · ${((ev.ms || 0) / 1000).toFixed(1)}s`;
+  d.insertAdjacentHTML("beforeend", table);
+}
+function bindChips(root) {
+  root.querySelectorAll(".call[data-card]").forEach((c) => {
+    c.onclick = () => {
+      const d = document.getElementById("card-" + c.dataset.card);
+      if (!d) return;
+      document.body.classList.remove("nodata");
+      d.scrollIntoView({ behavior: "smooth", block: "center" });
+      d.classList.add("hl"); setTimeout(() => d.classList.remove("hl"), 1500);
+    };
+  });
+}
+$("#dataToggle").addEventListener("click", () => document.body.classList.toggle("nodata"));
+
+// ---------------- Teach lap tracker
+const STEPS = ["NEAR writes lessons", "NEAR writes a held-out exam", "Exam before", "Edit weights on this Mac", "Exam after", "Keep or undo"];
+const NOW = ["NEAR is writing lessons from this chat…", "NEAR is writing a held-out exam question…", "Student is answering the exam on your Mac…",
+  "Editing one layer of the student's weights on your Mac…", "Student is retaking the exam on your Mac…", "NEAR is deciding to keep or undo the edit…"];
+let lap = null;
+function lapStart() { lap = { from: labAfter, caps: Array(6).fill(null), exams: 0, done: false }; drawSteps(); }
+function lapDone() { if (!lap) return; if (!lap.caps[5]) lap.caps[5] = lap.caps[3] ? "Kept the edit" : "No edit made"; lap.done = true; drawSteps(); }
+function lapEvent(e) {
+  if (!lap || e.seq <= lap.from || e.kind !== "lab_call") return;
+  const r = e.result || {};
+  if (e.tool === "lab_add_lesson" && !r.exam) lap.caps[0] = `${r.lesson} saved`;
+  if (e.tool === "lab_add_lesson" && r.exam) { lap.caps[0] ||= "saved"; lap.caps[1] = `${r.lesson} held out`; }
+  if (e.tool === "lab_run_exam") { if (lap.exams++ === 0 || !lap.caps[3]) lap.caps[2] = `score ${r.average}`; else lap.caps[4] = `score ${r.average}`; }
+  if (e.tool === "lab_teach") lap.caps[3] = r.error ? "error" : `layer ${r.layer}, change size ${r.delta}`;
+  if (e.tool === "lab_revert_last") lap.caps[5] = "Undone (score dropped)";
+  drawSteps();
+}
+function drawSteps() {
+  if (!lap) return;
+  const next = lap.caps.findIndex((c) => !c);
+  $("#steps").style.display = "block";
+  $("#steps").innerHTML = STEPS.map((t, i) => `<div class="step ${lap.caps[i] ? "on" : i === next && !lap.done ? "cur" : ""}"><span class="n">${i + 1}</span>
+    <div>${t}${lap.caps[i] ? ` <span class="c">· ${esc(lap.caps[i])}</span>` : ""}</div></div>`).join("");
+  $("#now").textContent = lap.done ? "Lap finished." : "now: " + NOW[next < 0 ? 5 : next];
+}
+$("#bannerTeach").addEventListener("click", () => send("🎓 Teach from this chat", true));
 
 // ---------------- Training pane
 let labAfter = 0;
@@ -345,6 +471,7 @@ async function pollLab() {
     const d = await (await fetch("/api/lab/events?after=" + labAfter)).json();
     const fresh = new Set(d.events.map((e) => e.seq));
     labEvents.push(...d.events);
+    d.events.forEach(lapEvent);
     if (d.events.length) labAfter = d.events[d.events.length - 1].seq;
     drawCard(d.model);
     if (d.events.length || !labEvents.length) { drawChart(); drawFeed(fresh); }
