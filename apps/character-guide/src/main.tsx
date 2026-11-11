@@ -7,6 +7,7 @@ import { SceneClipNarrator } from "./engine/scene-clips";
 import { loadHistory, recordVisit } from "./engine/history";
 import type { Snapshot } from "./engine/types";
 import "./style.css";
+import { RestaurantChat } from "./ui/RestaurantChat";
 import { artifact, pages, steps } from "./fixture";
 import { CharacterStage, type StageHandle } from "./ui/CharacterStage";
 
@@ -92,6 +93,7 @@ function App() {
           {clipError && <p role="alert">{clipError}</p>}
         </fieldset>
         <p className="note" data-testid="status">Page {pageIndex + 1}/{steps.length}. Playback step {snap ? snap.index + 1 : 0}/{steps.length} - {snap?.phase}. Narration: {sceneClips[page.id] ? "local page clip: " + sceneClips[page.id].name + " (not generated voice)" : audioUrl ? "your local file " + audioName + " (same clip for pages without their own)" : useBrowserVoice ? "fallback browser voice (may use a service)" : "mock pacer fallback (no audio; ~10s captions); no generated voice"}. Character: recovered Cebollito GLB at public/character.glb (legs clip plays while walking; arms are posed in code from the skeleton to point at the step marker; mouth is a dark overlay shape that opens while speaking, not a morph in the model).</p>
+        <RestaurantChat onTalking={v=>{if(v)ctrl.stop();stage.current?.setTalking(v);}} onLevel={v=>stage.current?.setMouthLevel(v)} />
       </main>
       <aside>
         <h3>History</h3>
