@@ -12,6 +12,7 @@ Run:  ~/dev/secret-sauce/.venv/bin/python apps/secret-sauce-web/server.py
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import datetime as dt
 import json
 import os
@@ -22,6 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import anyio
 import httpx2
 import uvicorn
 from starlette.applications import Starlette
@@ -248,6 +250,35 @@ def count_rows(text: str) -> int | None:
     return None
 
 
+def preview_rows(text: str, limit: int = 15) -> dict:
+    """Turn a tool result into a small table for the data panel (first `limit` rows)."""
+    def cell(v):
+        v = v if isinstance(v, str) else json.dumps(v)
+        return v if len(v) <= 60 else v[:57] + "..."
+    try:
+        data = json.loads(text)
+    except (ValueError, TypeError):
+        lines = [l for l in (text or "").splitlines() if l.strip()]
+        return {"columns": ["text"], "rows": [[cell(l)] for l in lines[:limit]], "total": len(lines)}
+    if isinstance(data, dict):
+        lists = [v for v in data.values() if isinstance(v, list)]
+        if lists:
+            data = max(lists, key=len)
+        else:
+            return {"columns": ["field", "value"], "rows": [[cell(k), cell(v)] for k, v in list(data.items())[:limit]], "total": len(data)}
+    if not isinstance(data, list):
+        return {"columns": ["value"], "rows": [[cell(data)]], "total": 1}
+    cols: list[str] = []
+    for r in data[:limit]:
+        if isinstance(r, dict):
+            cols += [k for k in r if k not in cols]
+    if not cols:
+        return {"columns": ["value"], "rows": [[cell(r)] for r in data[:limit]], "total": len(data)}
+    cols = cols[:8]
+    rows = [[cell(r.get(c, "")) if isinstance(r, dict) else cell(r) for c in cols] for r in data[:limit]]
+    return {"columns": cols, "rows": rows, "total": len(data)}
+
+
 def system_prompt() -> str:
     memory = MEMORY_FILE.read_text() if MEMORY_FILE.exists() else "(no memory yet)"
     return (
@@ -314,15 +345,29 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
     proposals: list[dict] = []
     answer = ""
 
-    async with bistro_client() as bistro, httpx2.AsyncClient(timeout=240) as http:
-        listed = await bistro.list_tools()
-        mcp_tools = [
-            {
-                "type": "function",
-                "function": {"name": t.name, "description": t.description or "", "parameters": t.input_schema or {"type": "object"}},
-            }
-            for t in listed.tools
-        ]
+    async with contextlib.AsyncExitStack() as stack:
+        http = await stack.enter_async_context(httpx2.AsyncClient(timeout=240))
+        bistro = None
+        mcp_tools: list[dict] = []
+        try:  # the Bistro tunnel can be down; keep chatting with local tools if so
+            health = await http.get(BISTRO_URL.rsplit("/mcp", 1)[0] + "/health", timeout=8)
+            if health.status_code != 200:
+                raise RuntimeError(f"health {health.status_code}")
+            with anyio.fail_after(15):
+                bistro = await stack.enter_async_context(bistro_client())
+                listed = await bistro.list_tools()
+            mcp_tools = [
+                {
+                    "type": "function",
+                    "function": {"name": t.name, "description": t.description or "", "parameters": t.input_schema or {"type": "object"}},
+                }
+                for t in listed.tools
+            ]
+        except Exception as exc:
+            bistro = None
+            print(f"[gate] Bistro MCP unavailable: {type(exc).__name__}", flush=True)
+            await send({"type": "notice", "text": "The Bistro data server is offline right now. NEAR can only use local tools."})
+            messages.append({"role": "system", "content": "Note: the Bistro data server is offline this turn. Its tools are unavailable; say so if the question needs them."})
         tools = mcp_tools + LOCAL_TOOLS + [t for t in lab.LAB_TOOLS if t["function"]["name"] in lab.LAB_NAMES]
 
         for rnd in range(MAX_ROUNDS):
@@ -346,6 +391,7 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
                 source = "lab" if name in lab.LAB_NAMES else "local" if name in LOCAL_NAMES else "bistro"
                 entry = {"tool": name, "args": args, "source": source}
                 await send({"type": "tool_start", **entry})
+                t_call = time.time()
                 try:
                     if name in lab.LAB_NAMES:
                         text = await lab.run_lab_tool(name, args)
@@ -357,6 +403,8 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
                         if proposal:
                             proposals.append(proposal)
                     else:
+                        if bistro is None:
+                            raise RuntimeError("Bistro data server is offline")
                         result = await bistro.call_tool(name, args)
                         text = mcp_result_text(result)
                         rows = count_rows(text)
@@ -366,8 +414,10 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
                 except Exception as exc:  # report the error back to NEAR, keep going
                     text = f"Tool error: {exc}"
                     entry["error"] = True
+                entry["ms"] = int((time.time() - t_call) * 1000)
                 trace.append(entry)
-                await send({"type": "tool_done", **entry})
+                # rows go to the owner's own browser only; they are not stored in the trace
+                await send({"type": "tool_done", **entry, "preview": preview_rows(text)})
                 if len(text) > MAX_TOOL_CHARS:
                     text = text[:MAX_TOOL_CHARS] + "\n...(truncated)"
                 messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": text})
