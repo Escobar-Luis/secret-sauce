@@ -27,3 +27,17 @@ small{color:var(--dim)}
 @media (max-width:700px){.layout{grid-template-columns:1fr}aside{border-left:0;border-top:1px solid var(--ink)}}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+.demo-warning{margin:16px 24px;padding:12px;border:2px solid var(--ink);font-size:14px;line-height:1.5}
+.demo-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 24px}
+.demo-nav a{padding:8px 12px;color:var(--ink);border:1px solid var(--ink);text-decoration:none}
+.demo-nav a[aria-current=page]{background:var(--ink);color:#fff;border-width:2px}
+.demo-nav a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.demo-page{margin:16px 24px;padding:20px;border:4px solid var(--ink);line-height:1.5}
+.demo-page .eyebrow{font-size:12px;letter-spacing:.06em;margin:0 0 8px}
+.demo-page dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.demo-page dl div{border-top:2px solid var(--ink);padding-top:8px;min-width:0}
+.demo-page dt{font-size:13px;color:var(--dim)}.demo-page dd{margin:6px 0 0;font-size:clamp(20px,3vw,30px);font-weight:700;overflow-wrap:anywhere}
+.demo-page .scope{font-size:13px;color:var(--dim);border-top:1px solid #999;padding-top:12px}
+input[type=file]{max-width:100%}.bar label{max-width:100%;margin-left:0!important}
+@media(max-width:500px){.demo-page dl{grid-template-columns:1fr}.demo-page{padding:14px}.demo-nav a{font-size:14px}}
