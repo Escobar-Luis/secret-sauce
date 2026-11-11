@@ -1,0 +1,29 @@
+/* Tokens mirror NWF current main (globals.css + .nwf-landing, head a38998cb): #111 ink, #555 dim, #f5f5f5 surface, 4/2/1px border weights = importance, square, no glow/dark mode, Inter/system stack. Copied values only; no NWF code imported. */
+:root{--ink:#111;--dim:#555;--surf:#f5f5f5;--bwp:4px;--bws:2px;--bwx:1px}
+/* Monochrome, square-edged, MoMA-reference style per Adam's NWF rules (2026-10-31/11-01): black/white/gray only, no circles, no glow, thick borders = primary data. */
+*{box-sizing:border-box;border-radius:0}
+body{margin:0;background:#fff;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.layout{display:grid;grid-template-columns:1fr 260px;min-height:100vh}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+.brand{display:inline-block;background:var(--ink);color:#fff;font-weight:900;font-size:.7rem;letter-spacing:-.04em;padding:6px 8px;margin-bottom:12px}
+.head{padding:24px 24px 16px;border-bottom:var(--bwp) solid var(--ink)}
+.stage{position:relative;height:clamp(260px,50vh,420px);margin:24px;background:#fff;border:var(--bwp) solid var(--ink);overflow:hidden}
+.pt{position:absolute;transform:translateX(-50%);width:28px;height:28px;display:grid;place-items:center;font-weight:700;background:#fff;border:1px solid var(--ink);font-size:13px}
+.pt.on{border:var(--bwp) solid var(--ink);background:var(--ink);color:#fff}
+.steps{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:0 24px 16px;padding:0}
+.steps button{border-width:1px;padding:6px 10px;font-size:13px}.steps button.cur{border-width:4px;font-weight:700}
+.caption{margin:0 24px;min-height:56px;padding:12px;border:1px solid var(--ink);font-size:18px}
+.bar{margin:16px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;background:#fff;color:var(--ink);border:2px solid var(--ink);padding:8px 18px;cursor:pointer}
+button.cta{background:var(--ink);color:#fff;border-width:4px}
+button:hover:not(:disabled){background:var(--ink);color:#fff}button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button:disabled{color:#767676;border-color:#767676;cursor:default}
+.note{margin:0 24px 24px;color:var(--dim);font-size:13px}
+aside{padding:24px;border-left:1px solid var(--ink)}
+aside h3{border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:12px}
+aside .h{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #999}
+aside .h button{border-width:1px;padding:4px 8px;text-align:left}
+small{color:var(--dim)}
+@media (max-width:700px){.layout{grid-template-columns:1fr}aside{border-left:0;border-top:1px solid var(--ink)}}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
