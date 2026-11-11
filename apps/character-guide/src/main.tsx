@@ -7,11 +7,12 @@ import { SceneClipNarrator } from "./engine/scene-clips";
 import { loadHistory, recordVisit } from "./engine/history";
 import type { Snapshot } from "./engine/types";
 import "./style.css";
+import { SensitiveGraph } from "./ui/SensitiveGraph";
 import { artifact, pages, steps } from "./fixture";
 import { CharacterStage, type StageHandle } from "./ui/CharacterStage";
 
 function historyReplace(id: string) { window.history.replaceState(null, "", "#" + id); }
-function App() {
+function WalkthroughApp() {
   const stage = useRef<StageHandle>(null);
   const [useBrowserVoice, setUseBrowserVoice] = useState(false);
   const [pageIndex, setPageIndex] = useState(() => Math.max(0, pages.findIndex((p) => p.id === location.hash.slice(1))));
@@ -101,4 +102,5 @@ function App() {
     </div>
   );
 }
+function App(){const [graph,setGraph]=useState(location.hash==='#sensitive-data');return <><nav className="app-pages" aria-label="App pages"><button aria-current={!graph?'page':undefined} onClick={()=>{setGraph(false);history.replaceState(null,'','#sales');}}>Restaurant walkthrough</button><button aria-current={graph?'page':undefined} onClick={()=>{setGraph(true);history.replaceState(null,'','#sensitive-data');}}>Sensitive-data graph</button></nav>{graph?<SensitiveGraph/>:<WalkthroughApp/>}</>;}
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
