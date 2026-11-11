@@ -1,13 +1,2 @@
-import {spawn} from 'node:child_process';import {chromium} from 'playwright-core';
-const vite=spawn('node',['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4178'],{stdio:'ignore'});let b,n=0;const ok=(x,m)=>{if(!x)throw Error(m);n++;console.log('PASS '+m);};
-try{for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4178')).ok)break;}catch{}await new Promise(r=>setTimeout(r,50));}
-b=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader']});const p=await b.newPage({viewport:{width:1200,height:1000}});const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:4178/#sensitive-data');await p.waitForFunction(()=>window.__pac);
-ok(await p.getByRole('heading',{name:'Cebollito explains a restaurant graph',exact:true}).isVisible(),'dedicated graph page');ok((await p.locator('table').innerText()).includes('$3,200'),'accessible synthetic data table');
-let last=null;
-for(const id of ['monday','tuesday','wednesday','thursday']){await p.getByTestId('graph-point-'+id).click();await p.waitForFunction(()=>document.querySelector('[data-testid=graph-status]').textContent.startsWith('Pointing'));const state=await p.evaluate(()=>({x:window.__pac.s.pos.x,pointing:window.__pac.s.pointing,marker:{x:window.__pac.s.markerWorld.x,y:window.__pac.s.markerWorld.y},walking:window.__pac.s.walking}));ok(state.pointing===1&&!state.walking,id+' reaches point and points');if(last!==null)ok(state.x>last,id+' character actually moves right');last=state.x;}
-ok(await p.getByRole('button',{name:'Next graph point',exact:true}).isDisabled(),'next disabled endpoint');await p.getByRole('button',{name:'Previous graph point',exact:true}).click();await p.waitForFunction(()=>document.querySelector('[data-testid=graph-status]').textContent.startsWith('Pointing'));ok((await p.locator('.graph-explanation').innerText()).includes('POINT 3 OF 4'),'backward updates explanation');
-await p.getByTestId('graph-point-monday').click();await p.getByRole('button',{name:'Stop graph walkthrough',exact:true}).click();await p.waitForTimeout(150);ok((await p.getByTestId('graph-status').innerText()).startsWith('Stopped'),'stop cancels walkthrough');
-await p.getByTestId('graph-point-wednesday').click();await p.waitForFunction(()=>document.querySelector('[data-testid=graph-status]').textContent.startsWith('Pointing'));
-for(const width of [1200,390,320]){await p.setViewportSize({width,height:1000});await p.waitForTimeout(200);ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+' nooverflow');await p.screenshot({path:`/downloads/sensitive-graph-${width}.png`,fullPage:true});}
-await p.getByRole('button',{name:'Restaurant walkthrough',exact:true}).click();await p.getByTestId('demo-page').waitFor();ok(true,'original walkthrough preserved');ok(errors.length===0,'no page errors '+JSON.stringify(errors));console.log(n+' graph browser checks');
-}finally{if(b)await b.close();vite.kill();}
+// Rich metric-driven graph supersedes the original four-point demonstration.
+import './metrics.mjs';
