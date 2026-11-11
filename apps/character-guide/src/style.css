@@ -51,3 +51,5 @@ input[type=file]{max-width:100%}.bar label{max-width:100%;margin-left:0!importan
 .restaurant-chat audio{display:block;width:100%;max-width:100%;min-width:0}.restaurant-chat ul{padding-left:18px}.restaurant-chat li{min-width:0}
 
 .graph-speech{margin:24px 0;padding:16px;border:3px solid var(--ink)}.graph-speech button{margin:6px 8px 6px 0;max-width:100%;white-space:normal}.graph-speech input{max-width:100%}.graph-speech label{display:block;margin:14px 0}
+
+.metric-select{display:block;margin:24px 0}.metric-select select{display:block;width:100%;max-width:100%;padding:12px;margin-top:8px;font:inherit}.metric-summary{display:flex;flex-wrap:wrap;gap:12px}.metric-summary>div{border:2px solid;padding:12px;flex:1;min-width:150px}.metric-summary dd{margin:8px 0;font-weight:bold}.graph-axis .graph-y{font-size:12px;max-width:30%;white-space:normal}
