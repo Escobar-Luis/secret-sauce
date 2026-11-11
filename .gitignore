@@ -7,3 +7,11 @@ __pycache__/
 .DS_Store
 dist/
 build/
+
+# Private, never commit: owner data, lessons, model edits and weight backups
+vault/
+*.safetensors
+# Local agent tooling
+.claude/worktrees/
+.claude/launch.json
+.claude/settings.local.json
