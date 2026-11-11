@@ -1,0 +1,2 @@
+import {it,expect} from 'vitest';import {restaurantStory} from './restaurant-story';
+it('has five fixed matched narration scenes without wallet execution',()=>{expect(restaurantStory).toHaveLength(5);expect(new Set(restaurantStory.map(s=>s.clip)).size).toBe(5);expect(restaurantStory.find(s=>s.id==='staking')!.text).toContain('staking rewards');expect(restaurantStory.find(s=>s.id==='loyalty')!.text).toContain('separate proposal');expect(restaurantStory.find(s=>s.id==='payments')!.text).toContain('merchant checkout');});
