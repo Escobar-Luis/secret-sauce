@@ -1,15 +1,17 @@
 import {useEffect,useRef,useState} from 'react';
+import {GraphSpeech} from './GraphSpeech';
 import {CharacterStage,type StageHandle} from './CharacterStage';
 import {graphIndex,graphPoints} from '../engine/sensitive-graph';
 export function SensitiveGraph(){
  const stage=useRef<StageHandle>(null),active=useRef<AbortController|undefined>(undefined);
+ const [speechEpoch,setSpeechEpoch]=useState(0);
  const [index,setIndex]=useState(0),[phase,setPhase]=useState('Ready. Select a point to start.');
  const point=graphPoints[index];
  useEffect(()=>()=>{active.current?.abort();stage.current?.setTalking(false);},[]);
- const go=async(value:number)=>{active.current?.abort();const next=graphIndex(value),controller=new AbortController();active.current=controller;setIndex(next);setPhase('Walking to '+graphPoints[next].day+' data point...');stage.current?.setTalking(false);
-  try{const p=graphPoints[next];await stage.current?.walkTo({id:p.id,title:p.title,narration:p.explanation,target:p.target},controller.signal);if(!controller.signal.aborted)setPhase('Pointing at '+p.day+'. Read the explanation below. Silent by default.');}catch(e){if((e as Error).name!=='AbortError')setPhase('Could not move character. The table and explanation remain available.');}
+ const go=async(value:number)=>{setSpeechEpoch(v=>v+1);active.current?.abort();const next=graphIndex(value),controller=new AbortController();active.current=controller;setIndex(next);setPhase('Walking to '+graphPoints[next].day+' data point...');stage.current?.setTalking(false);
+  try{const p=graphPoints[next];await stage.current?.walkTo({id:p.id,title:p.title,narration:p.explanation,target:p.target},controller.signal);if(!controller.signal.aborted)setPhase('Pointing at '+p.day+'. Read the explanation below. Choose a speech control below to hear this point.');}catch(e){if((e as Error).name!=='AbortError')setPhase('Could not move character. The table and explanation remain available.');}
  };
- const stop=()=>{active.current?.abort();stage.current?.setTalking(false);setPhase('Stopped. No audio or data upload.');};
+ const stop=()=>{setSpeechEpoch(v=>v+1);active.current?.abort();stage.current?.setTalking(false);setPhase('Stopped. No audio or data upload.');};
  return <section className="sensitive-walk" aria-labelledby="sensitive-title">
   <p className="eyebrow">SENSITIVE-DATA WALKTHROUGH / SYNTHETIC ONLY</p><h1 id="sensitive-title">Cebollito explains a restaurant graph</h1>
   <p>No real restaurant, customer, payment or employee records. Local synthetic fixture, not a live POS connection, privacy guarantee or verified confidential-computing result.</p>
@@ -27,7 +29,8 @@ export function SensitiveGraph(){
   <nav aria-label="Graph walkthrough points" className="graph-points">{graphPoints.map((p,i)=><button key={p.id} aria-current={i===index?'step':undefined} onClick={()=>void go(i)} data-testid={'graph-point-'+p.id}>{p.day}: ${p.sales.toLocaleString()}</button>)}</nav>
   <p role="status" data-testid="graph-status">{phase}</p><article className="graph-explanation" aria-live="polite"><p>POINT {index+1} OF {graphPoints.length}</p><h2>{point.title}</h2><p>{point.explanation}</p></article>
   <div className="graph-controls"><button disabled={index===0} onClick={()=>void go(index-1)}>Previous graph point</button><button onClick={()=>void go(index)}>Replay graph point</button><button disabled={index===graphPoints.length-1} onClick={()=>void go(index+1)}>Next graph point</button><button onClick={stop}>Stop graph walkthrough</button></div>
+  <GraphSpeech key={speechEpoch} text={point.explanation} pointId={point.id} onTalking={v=>stage.current?.setTalking(v)} onLevel={v=>stage.current?.setMouthLevel(v)} onBeforePlay={()=>active.current?.abort()}/>
   <table><caption>Accessible source data: all values synthetic</caption><thead><tr><th>Day</th><th>Sales (USD)</th><th>Labor cost / sales</th></tr></thead><tbody>{graphPoints.map(p=><tr key={p.id}><th scope="row">{p.day}</th><td>${p.sales.toLocaleString()}</td><td>{p.labor}%</td></tr>)}</tbody></table>
-  <p>Caption walkthrough is silent by default. No personal voice clip is embedded. The separate private local TTS bridge needs an authorized local reference and is not deployed by this graph PR.</p>
+  <p>Use the explicit speech controls above. Browser speech is a stock voice, not a clone. No personal voice clip is embedded. Private local generation needs your authorized local runtime and reference.</p>
  </section>;
 }
