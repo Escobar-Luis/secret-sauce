@@ -165,6 +165,8 @@ def run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, int | None, di
         for f in DATA_DIR.rglob("*"):
             if len(hits) >= 50:
                 break
+            if f.is_symlink() or not f.resolve().is_relative_to(DATA_DIR):
+                continue
             if not f.is_file() or f.stat().st_size > 2_000_000 or any(part.startswith(".") for part in f.relative_to(DATA_DIR).parts):
                 continue
             try:
