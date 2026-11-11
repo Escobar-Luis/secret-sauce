@@ -4,7 +4,7 @@ export const nearGraphPoints = [
     "day": "Mon",
     "sales": 1850,
     "title": "NEAR Protocol and smart contracts",
-    "text": "Monday: eighteen fifty. Synthetic sales. NEAR Protocol supports smart contracts; this demo deploys none.",
+    "text": "Monday: eighteen fifty. Imagine your restaurant on NEAR Protocol, with smart contracts coordinating digital experiences.",
     "clip": "near-0.wav",
     "target": {
       "x": 0.09,
@@ -16,7 +16,7 @@ export const nearGraphPoints = [
     "day": "Tue",
     "sales": 2400,
     "title": "NEAR AI private cloud",
-    "text": "Tuesday: twenty four hundred. NEAR AI offers private cloud inference. This graph proves no privacy guarantee.",
+    "text": "Tuesday: twenty four hundred. NEAR AI could turn sales and inventory questions into useful restaurant insights.",
     "clip": "near-1.wav",
     "target": {
       "x": 0.22666666666666666,
@@ -28,7 +28,7 @@ export const nearGraphPoints = [
     "day": "Wed",
     "sales": 3150,
     "title": "Agent Connect permissions",
-    "text": "Wednesday: thirty one fifty. Agent Connect can act within owner signed rules. No account is connected.",
+    "text": "Wednesday: thirty one fifty. Agent Connect can give restaurant assistants accounts that follow rules you sign.",
     "clip": "near-2.wav",
     "target": {
       "x": 0.3633333333333333,
@@ -40,7 +40,7 @@ export const nearGraphPoints = [
     "day": "Thu",
     "sales": 2700,
     "title": "Intents and competing quotes",
-    "text": "Thursday: twenty seven hundred. Intents expresses token outcomes; competing market makers offer quotes.",
+    "text": "Thursday: twenty seven hundred. Intents lets you describe the token outcome, while market makers compete on quotes.",
     "clip": "near-3.wav",
     "target": {
       "x": 0.5,
@@ -52,7 +52,7 @@ export const nearGraphPoints = [
     "day": "Fri",
     "sales": 4250,
     "title": "Atomic settlement and merchant checkout",
-    "text": "Friday: forty two fifty. Approved quotes use atomic settlement. Restaurant checkout and refunds still need integration.",
+    "text": "Friday: forty two fifty. Atomic settlement could support a connected payment journey across supported assets and chains.",
     "clip": "near-4.wav",
     "target": {
       "x": 0.6366666666666666,
@@ -64,7 +64,7 @@ export const nearGraphPoints = [
     "day": "Sat",
     "sales": 4980,
     "title": "Staking rewards fund inference",
-    "text": "Saturday: forty nine eighty. Staking rewards can fund NEAR AI inference credits. Coverage varies; no stake is made.",
+    "text": "Saturday: forty nine eighty. Stake NEAR and channel staking rewards into inference credits to help power your assistant.",
     "clip": "near-5.wav",
     "target": {
       "x": 0.7733333333333332,
@@ -76,7 +76,7 @@ export const nearGraphPoints = [
     "day": "Sun",
     "sales": 3300,
     "title": "Customer incentives: separate proposal",
-    "text": "Sunday: thirty three hundred. Customer staking perks are a separate proposal. No guaranteed yield, rewards, or payments.",
+    "text": "Sunday: thirty three hundred. Explore customer perks around participation, with clear funding and terms. One connected restaurant experience.",
     "clip": "near-6.wav",
     "target": {
       "x": 0.9099999999999999,
