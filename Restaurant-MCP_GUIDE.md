@@ -20,8 +20,8 @@ Your agent can query all of it through the tools below. It **cannot** create, mo
 
 | | |
 |---|---|
-| **Endpoint** | `https://task-transactions-separation-detection.trycloudflare.com/mcp` *(live as of Nov 11; URL rotates — ask Bondan for the current one)* |
-| **Auth header** | `Authorization: Bearer bistro-sk-Pr1nceSt2026` |
+| **Endpoint** | `$BISTRO_MCP_URL` *(live as of Nov 11; URL rotates — ask Bondan for the current one)* |
+| **Auth header** | `Authorization: Bearer $BISTRO_MCP_TOKEN` |
 | **Protocol** | Streamable HTTP (MCP) |
 | **Database** | `resto` (fixed) |
 
@@ -32,7 +32,7 @@ Your agent can query all of it through the tools below. It **cannot** create, mo
 ### Claude Code
 ```bash
 claude mcp add --transport http bistro \
-  --header "Authorization: Bearer bistro-sk-Pr1nceSt2026" \
+  --header "Authorization: Bearer $BISTRO_MCP_TOKEN" \
   https://<current-tunnel-url>/mcp
 ```
 
@@ -43,7 +43,7 @@ Add to `.cursor/mcp.json` (project) or global MCP settings:
   "mcpServers": {
     "bistro": {
       "url": "https://<current-tunnel-url>/mcp",
-      "headers": { "Authorization": "Bearer bistro-sk-Pr1nceSt2026" }
+      "headers": { "Authorization": "Bearer $BISTRO_MCP_TOKEN" }
     }
   }
 }
@@ -52,7 +52,7 @@ Add to `.cursor/mcp.json` (project) or global MCP settings:
 ### Any other MCP client
 - Transport: **Streamable HTTP**
 - URL: `https://<current-tunnel-url>/mcp`
-- Header: `Authorization: Bearer bistro-sk-Pr1nceSt2026`
+- Header: `Authorization: Bearer $BISTRO_MCP_TOKEN`
 
 ### Quick health check
 ```bash

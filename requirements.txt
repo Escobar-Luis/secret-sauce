@@ -1,0 +1,7 @@
+# Python 3.12, Apple Silicon (MLX). Install: python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+mcp==2.3.0
+httpx2==2.16.0
+starlette==1.10.0
+uvicorn==0.54.0
+mlx==0.32.4
+mlx-lm==0.32.2
