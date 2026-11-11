@@ -67,6 +67,14 @@
   .layers { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; margin-top: 8px; }
   .layers span { height: 12px; border-radius: 2px; background: var(--panel2); }
   .layers span.ed { background: var(--accent); }
+  .feed { max-height: 260px; overflow-y: auto; }
+  .think { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; font-size: 12.5px; }
+  .think b { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+  .think.on b::after { content: " ●"; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .think div { color: var(--text); margin-top: 3px; max-height: 90px; overflow-y: auto; white-space: pre-wrap; }
+  .spin { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: rot .8s linear infinite; vertical-align: -1px; }
+  @keyframes rot { to { transform: rotate(360deg); } }
   .feed .ev { border-top: 1px solid var(--line); padding: 7px 0; }
   .feed .ev:first-child { border-top: none; }
   .ev .top { display: flex; gap: 8px; align-items: baseline; }
@@ -168,6 +176,7 @@
 </footer>
 </div>
 <aside id="lab">
+  <div class="think" id="think"><b>NEAR is thinking</b><div id="thinkText">Idle. Ask a question or click Teach.</div></div>
   <div class="banner">Training runs only when you click <b>Teach from this chat</b>. Reading data does not change the model.
     <button id="bannerTeach" disabled>🎓 Teach from this chat</button>
     <div class="steps" id="steps" style="display:none"></div>
@@ -175,12 +184,12 @@
   </div>
   <h3>Student model</h3>
   <div class="card" id="mcard">…</div>
+  <h3>Live feed</h3>
+  <div class="card feed" id="feed"><span style="color:var(--muted)">No lab calls yet. Click "Teach from this chat".</span></div>
   <h3>Exam score</h3>
   <div class="card"><svg id="chart" viewBox="0 0 360 120" width="100%" height="120"></svg></div>
   <h3>Student vs NEAR (last question)</h3>
   <div id="cmp" class="cmp"><div><b>Student (this Mac)</b>—</div><div><b>NEAR (teacher)</b>—</div></div>
-  <h3>Live feed</h3>
-  <div class="card feed" id="feed"><span style="color:var(--muted)">No lab calls yet. Ask a question, then click "Teach from this chat".</span></div>
   <h3>Playbook rules</h3>
   <div class="rules" id="rules"></div>
 </aside>
@@ -242,6 +251,12 @@ function renderBot(el, turn) {
   );
 }
 
+let thinkBuf = "";
+function showThink(fallback) {
+  const t = thinkBuf.replace(/<\/?think>/g, "").trim();
+  $("#thinkText").textContent = t ? t.slice(-400) : (fallback || $("#thinkText").textContent);
+  $("#thinkText").scrollTop = 1e6;
+}
 async function send(text, teach = false) {
   if (busy || !text.trim()) return;
   if (teach) lapStart(); else clearCards();
@@ -278,6 +293,8 @@ async function send(text, teach = false) {
         if (!line) continue;
         const ev = JSON.parse(line);
         if (ev.session_id) sessionId = ev.session_id;
+        if (ev.type === "near_text") { thinkBuf += ev.text; showThink(); continue; }
+        if (ev.type === "thinking") { thinkBuf = ""; $("#think").classList.add("on"); showThink("…"); }
         if (ev.type === "thinking") { live.label = ev.round === 1 ? "NEAR is planning" : "NEAR is reading the results"; drawLive(); }
         else if (ev.type === "tool_start") { const card = dataCardStart(ev); live.calls.push({ ...ev, card }); live.label = `Running ${ev.tool}`; drawLive(); bindChips(el); }
         else if (ev.type === "tool_done") { const c = live.calls[live.calls.length - 1] || {}; Object.assign(c, ev, { done: true }); dataCardDone(c.card, ev); drawLive(); bindChips(el); }
@@ -287,9 +304,13 @@ async function send(text, teach = false) {
     }
     if (!finished) throw new Error("The connection closed early.");
   } catch (e) {
-    el.innerHTML = `<div class="error">Something went wrong: ${esc(e.message)}</div>`;
+    const dropped = e instanceof TypeError || /network|closed early|fetch/i.test(e.message);
+    const msg = dropped ? (teach ? "Server restarted, click Teach again." : "Server restarted, please ask again.") : "Something went wrong: " + e.message;
+    el.innerHTML = `<div class="error">${esc(msg)}</div>`;
+    if (teach && lap) { lap.done = true; $("#now").textContent = msg; }
   } finally {
     busy = false; sendBtn.disabled = false; scrollDown(); input.focus();
+    $("#think").classList.remove("on");
     $("#bannerTeach").disabled = !sessionId;
   }
 }
@@ -443,14 +464,23 @@ function resultText(e) {
 }
 
 function drawFeed(fresh) {
-  const items = labEvents.slice().reverse().slice(0, 40).map((e) => {
+  const ended = new Map();
+  for (const e of labEvents) if (e.kind === "lab_call" && e.start) ended.set(e.start, e);
+  const items = [];
+  for (const e of labEvents.slice(-60)) {
     const isNew = fresh.has(e.seq) ? " new" : "";
-    if (e.kind === "rule_proposed") return `<div class="ev${isNew}"><div class="top"><span class="t">propose_playbook_rule</span></div><div class="r" style="color:var(--accent)">waiting for approval: ${esc(e.text)}</div></div>`;
-    if (e.kind === "rule_approved") return `<div class="ev${isNew}"><div class="top"><span class="t">rule approved</span></div><div class="r">${esc(e.text)}</div></div>`;
-    return `<div class="ev${e.ok ? "" : " bad"}${isNew}"><div class="top"><span class="t">${esc(e.tool)}</span><span class="ms">${(e.ms / 1000).toFixed(1)}s</span></div>
-      <div class="a">${esc(argText(e.args))}</div><div class="r">${esc(resultText(e))}</div></div>`;
-  });
-  if (items.length) $("#feed").innerHTML = items.join("");
+    if (e.kind === "rule_proposed") items.push(`<div class="ev${isNew}"><div class="top"><span class="t">propose_playbook_rule</span></div><div class="r" style="color:var(--accent)">waiting for approval: ${esc(e.text)}</div></div>`);
+    else if (e.kind === "rule_approved") items.push(`<div class="ev${isNew}"><div class="top"><span class="t">rule approved</span></div><div class="r">${esc(e.text)}</div></div>`);
+    else if (e.kind === "lab_start") {
+      const done = ended.get(e.seq);
+      if (!done) items.push(`<div class="ev${isNew}"><div class="top"><span class="t">${esc(e.tool)}</span><span class="ms"><span class="spin"></span></span></div>
+        <div class="a">${esc(argText(e.args))}</div><div class="r" style="color:var(--accent)">running on this Mac…</div></div>`);
+      else items.push(`<div class="ev${done.ok ? "" : " bad"}${fresh.has(done.seq) ? " new" : ""}"><div class="top"><span class="t">${esc(done.tool)}</span><span class="ms">${(done.ms / 1000).toFixed(1)}s</span></div>
+        <div class="a">${esc(argText(done.args))}</div><div class="r">${esc(resultText(done))}</div></div>`);
+    } else if (e.kind === "lab_call" && !e.start) items.push(`<div class="ev${e.ok ? "" : " bad"}${isNew}"><div class="top"><span class="t">${esc(e.tool)}</span><span class="ms">${(e.ms / 1000).toFixed(1)}s</span></div>
+      <div class="a">${esc(argText(e.args))}</div><div class="r">${esc(resultText(e))}</div></div>`);
+  }
+  if (items.length) { $("#feed").innerHTML = items.join(""); $("#feed").scrollTop = 1e6; }
 }
 
 function drawRules(d) {

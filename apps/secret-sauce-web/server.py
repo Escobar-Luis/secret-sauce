@@ -295,23 +295,51 @@ def system_prompt() -> str:
     )
 
 
-async def near_chat(http: httpx2.AsyncClient, messages: list[dict], tools: list[dict]) -> dict:
-    resp = await http.post(
-        f"{NEAR_BASE}/chat/completions",
-        headers={"Authorization": f"Bearer {NEAR_KEY}"},
-        json={
-            "model": NEAR_MODEL,
-            "messages": messages,
-            "tools": tools,
-            "tool_choice": "auto",
-            "temperature": 0.2,
-            "max_tokens": 2000,
-            "chat_template_kwargs": {"enable_thinking": False},
-        },
-    )
-    if resp.status_code != 200:
-        raise RuntimeError(f"NEAR returned {resp.status_code}: {resp.text[:300]}")
-    return resp.json()["choices"][0]["message"]
+async def near_chat(http: httpx2.AsyncClient, messages: list[dict], tools: list[dict], on_text=None) -> dict:
+    """Call NEAR with streaming. Text deltas go to on_text as they arrive; tool calls are assembled."""
+    payload = {
+        "model": NEAR_MODEL,
+        "messages": messages,
+        "tools": tools,
+        "tool_choice": "auto",
+        "temperature": 0.2,
+        "max_tokens": 2000,
+        "stream": True,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    content = ""
+    calls: dict[int, dict] = {}
+    async with http.stream("POST", f"{NEAR_BASE}/chat/completions", headers={"Authorization": f"Bearer {NEAR_KEY}"}, json=payload) as resp:
+        if resp.status_code != 200:
+            body = (await resp.aread()).decode(errors="replace")
+            raise RuntimeError(f"NEAR returned {resp.status_code}: {body[:300]}")
+        async for line in resp.aiter_lines():
+            if not line.startswith("data:"):
+                continue
+            data = line[5:].strip()
+            if data == "[DONE]":
+                break
+            try:
+                chunk = json.loads(data)
+            except ValueError:
+                continue
+            for choice in chunk.get("choices") or []:
+                delta = choice.get("delta") or {}
+                if delta.get("content"):
+                    content += delta["content"]
+                    if on_text:
+                        await on_text(delta["content"])
+                for tc in delta.get("tool_calls") or []:
+                    slot = calls.setdefault(tc.get("index", 0), {"id": "", "type": "function", "function": {"name": "", "arguments": ""}})
+                    if tc.get("id"):
+                        slot["id"] = tc["id"]
+                    fn = tc.get("function") or {}
+                    slot["function"]["name"] += fn.get("name") or ""
+                    slot["function"]["arguments"] += fn.get("arguments") or ""
+    msg: dict = {"role": "assistant", "content": content}
+    if calls:
+        msg["tool_calls"] = [calls[i] for i in sorted(calls)]
+    return msg
 
 
 def bistro_client() -> Client:
@@ -374,7 +402,10 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
         for rnd in range(MAX_ROUNDS):
             await send({"type": "thinking", "round": rnd + 1})
             t0 = time.time()
-            msg = await near_chat(http, messages, tools)
+            async def on_text(t: str) -> None:
+                await send({"type": "near_text", "text": t})
+
+            msg = await near_chat(http, messages, tools, on_text)
             calls = msg.get("tool_calls") or []
             print(f"[gate] round {rnd + 1}: NEAR took {time.time() - t0:.1f}s, tool calls: {[c['function']['name'] for c in calls]}", flush=True)
             content = strip_think(msg.get("content"))
