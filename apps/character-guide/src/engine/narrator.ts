@@ -40,11 +40,20 @@ export class AudioNarrator implements Narrator {
     ctx.createMediaElementSource(audio).connect(an); an.connect(ctx.destination);
     const buf = new Uint8Array(an.fftSize); let raf = 0;
     const tick = () => { an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += ((v - 128) / 128) ** 2; onLevel?.(Math.min(1, Math.sqrt(sum / buf.length) * 4)); raf = requestAnimationFrame(tick); };
-    const stop = () => { cancelAnimationFrame(raf); onLevel?.(0); audio.pause(); void ctx.close(); };
+    let settled = false;
     await new Promise<void>((resolve, reject) => {
-      signal.addEventListener("abort", () => { stop(); reject(new DOMException("aborted", "AbortError")); }, { once: true });
-      audio.onended = () => { stop(); resolve(); }; audio.onerror = () => { stop(); reject(new Error("audio failed")); };
-      audio.play().then(() => tick(), (e) => { stop(); reject(e); });
+      const finish = (error?: unknown) => {
+        if (settled) return; settled = true;
+        signal.removeEventListener("abort", abort); audio.onended = null; audio.onerror = null;
+        cancelAnimationFrame(raf); onLevel?.(0); audio.pause();
+        if (ctx.state !== "closed") void ctx.close().catch(() => {});
+        error ? reject(error) : resolve();
+      };
+      const abort = () => finish(new DOMException("aborted", "AbortError"));
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) return abort();
+      audio.onended = () => finish(); audio.onerror = () => finish(new Error("audio failed"));
+      audio.play().then(() => { if (!settled) tick(); }, finish);
     });
   }
 }
