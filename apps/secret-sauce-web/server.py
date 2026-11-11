@@ -305,6 +305,7 @@ async def near_chat(http: httpx2.AsyncClient, messages: list[dict], tools: list[
             "tools": tools,
             "tool_choice": "auto",
             "temperature": 0.2,
+            "max_tokens": 2000,
             "chat_template_kwargs": {"enable_thinking": False},
         },
     )
@@ -367,7 +368,7 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
             bistro = None
             print(f"[gate] Bistro MCP unavailable: {type(exc).__name__}", flush=True)
             await send({"type": "notice", "text": "The Bistro data server is offline right now. NEAR can only use local tools."})
-            messages.append({"role": "system", "content": "Note: the Bistro data server is offline this turn. Its tools are unavailable; say so if the question needs them."})
+            messages[0]["content"] += "\n\nNote: the Bistro data server is offline this turn. Its tools are unavailable; say so if the question needs them."
         tools = mcp_tools + LOCAL_TOOLS + [t for t in lab.LAB_TOOLS if t["function"]["name"] in lab.LAB_NAMES]
 
         for rnd in range(MAX_ROUNDS):
