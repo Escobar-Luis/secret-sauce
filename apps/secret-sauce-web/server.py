@@ -131,11 +131,21 @@ LOCAL_TOOLS = [
 LOCAL_NAMES = {t["function"]["name"] for t in LOCAL_TOOLS}
 
 
+BLOCKED_NAMES = {"opencode.json"}
+
+
+def is_blocked(p: Path) -> bool:
+    """Secrets and agent config never go to NEAR, even inside the data folder."""
+    return p.name in BLOCKED_NAMES or p.name == ".env" or p.name.startswith(".env.")
+
+
 def safe_path(rel: str | None) -> Path:
-    """Resolve a path inside DATA_DIR. Raise if it escapes the folder."""
+    """Resolve a path inside DATA_DIR. Raise if it escapes the folder or is a blocked file."""
     p = (DATA_DIR / (rel or ".")).resolve()
     if p != DATA_DIR and not p.is_relative_to(DATA_DIR):
         raise PermissionError("Path is outside the owner's data folder.")
+    if is_blocked(p):
+        raise PermissionError("That file is blocked.")
     return p
 
 
@@ -146,7 +156,7 @@ def run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, int | None, di
         if not p.is_dir():
             return "Not a folder.", 0, None
         items = sorted(
-            (f"{c.name}/" if c.is_dir() else f"{c.name} ({c.stat().st_size} bytes)") for c in p.iterdir() if not c.name.startswith(".")
+            (f"{c.name}/" if c.is_dir() else f"{c.name} ({c.stat().st_size} bytes)") for c in p.iterdir() if not c.name.startswith(".") and not is_blocked(c)
         )
         return "\n".join(items) or "(empty)", len(items), None
     if name == "read_file":
@@ -165,7 +175,7 @@ def run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, int | None, di
         for f in DATA_DIR.rglob("*"):
             if len(hits) >= 50:
                 break
-            if f.is_symlink() or not f.resolve().is_relative_to(DATA_DIR):
+            if f.is_symlink() or is_blocked(f) or not f.resolve().is_relative_to(DATA_DIR):
                 continue
             if not f.is_file() or f.stat().st_size > 2_000_000 or any(part.startswith(".") for part in f.relative_to(DATA_DIR).parts):
                 continue
@@ -450,6 +460,25 @@ async def health(_: Request):
     )
 
 
+ALLOWED_ORIGINS = {f"http://127.0.0.1:{PORT}", f"http://localhost:{PORT}"}
+
+
+class OriginGuard:
+    """Refuse POSTs from any other site, so a web page can't drive the gate."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "POST":
+            headers = dict(scope.get("headers") or [])
+            origin = headers.get(b"origin", b"").decode()
+            if origin and origin not in ALLOWED_ORIGINS:
+                await JSONResponse({"error": "Origin not allowed"}, status_code=403)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
 app = Starlette(
     routes=[
         Route("/", index),
@@ -460,6 +489,7 @@ app = Starlette(
         Route("/api/health", health),
     ]
 )
+app.add_middleware(OriginGuard)
 
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)
