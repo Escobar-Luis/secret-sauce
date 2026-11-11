@@ -167,6 +167,8 @@ def _sync_call(name: str, args: dict) -> tuple[str, dict]:
 
 
 async def run_lab_tool(name: str, args: dict) -> str:
+    shown_args = {k: (v[:80] + "…" if isinstance(v, str) and len(v) > 80 else v) for k, v in args.items()}
+    start = add_event("lab_start", tool=name, args=shown_args)
     async with _lock:  # MLX model is shared; one call at a time
         t0 = time.time()
         try:
@@ -177,8 +179,7 @@ async def run_lab_tool(name: str, args: dict) -> str:
         STATE["loaded"] = _wl is not None and "model" in getattr(_wl, "_state", {})
         if STATE["loaded"] and STATE["layers"] is None:
             STATE["layers"] = len(_wl._layers(_wl._state["model"]))
-        shown_args = {k: (v[:80] + "…" if isinstance(v, str) and len(v) > 80 else v) for k, v in args.items()}
-        add_event("lab_call", tool=name, args=shown_args, ms=int((time.time() - t0) * 1000), ok=ok, result=summary)
+        add_event("lab_call", start=start["seq"], tool=name, args=shown_args, ms=int((time.time() - t0) * 1000), ok=ok, result=summary)
         return text
 
 
@@ -228,5 +229,7 @@ TEACH_PROMPT = (
     "5. lab_run_exam again (score after).\n"
     "6. If the average went down, lab_revert_last.\n"
     "7. If you learned a durable house rule about reading this restaurant's data, call propose_playbook_rule once.\n"
+    "Before EACH tool call, write one short plain sentence saying what you are about to do, for example "
+    "\"I'll write a lesson about the payroll vendor switch.\"\n"
     "Then reply in 3 short lines: score before, score after, and whether the edit was kept or reverted."
 )

@@ -295,23 +295,25 @@ def system_prompt() -> str:
     )
 
 
-async def near_chat(http: httpx2.AsyncClient, messages: list[dict], tools: list[dict]) -> dict:
-    resp = await http.post(
-        f"{NEAR_BASE}/chat/completions",
-        headers={"Authorization": f"Bearer {NEAR_KEY}"},
-        json={
-            "model": NEAR_MODEL,
-            "messages": messages,
-            "tools": tools,
-            "tool_choice": "auto",
-            "temperature": 0.2,
-            "max_tokens": 2000,
-            "chat_template_kwargs": {"enable_thinking": False},
-        },
-    )
+async def near_chat(http: httpx2.AsyncClient, messages: list[dict], tools: list[dict], on_text=None) -> dict:
+    """Call NEAR once. The round's text (said before its tool calls) goes to on_text."""
+    payload = {
+        "model": NEAR_MODEL,
+        "messages": messages,
+        "tools": tools,
+        "tool_choice": "auto",
+        "temperature": 0.2,
+        "max_tokens": 2000,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    resp = await http.post(f"{NEAR_BASE}/chat/completions", headers={"Authorization": f"Bearer {NEAR_KEY}"}, json=payload)
     if resp.status_code != 200:
         raise RuntimeError(f"NEAR returned {resp.status_code}: {resp.text[:300]}")
-    return resp.json()["choices"][0]["message"]
+    msg = resp.json()["choices"][0]["message"]
+    # NEAR's streaming stalled in testing, so we show each round's text once the round ends
+    if on_text and msg.get("content"):
+        await on_text(strip_think(msg["content"]) or msg["content"].replace("</think>", ""))
+    return msg
 
 
 def bistro_client() -> Client:
@@ -374,7 +376,10 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
         for rnd in range(MAX_ROUNDS):
             await send({"type": "thinking", "round": rnd + 1})
             t0 = time.time()
-            msg = await near_chat(http, messages, tools)
+            async def on_text(t: str) -> None:
+                await send({"type": "near_text", "text": t})
+
+            msg = await near_chat(http, messages, tools, on_text)
             calls = msg.get("tool_calls") or []
             print(f"[gate] round {rnd + 1}: NEAR took {time.time() - t0:.1f}s, tool calls: {[c['function']['name'] for c in calls]}", flush=True)
             content = strip_think(msg.get("content"))
