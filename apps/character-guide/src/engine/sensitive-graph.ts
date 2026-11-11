@@ -1,0 +1,7 @@
+export const graphPoints = [
+  { id:'monday', day:'Mon', sales:1800, labor:28, target:{x:.16,y:.82}, title:'Aggregate sales, not receipts', explanation:'Monday shows $1,800 in synthetic aggregate sales. The chart does not need customer names, card details or individual receipts. Use the least detail needed for the question.' },
+  { id:'tuesday', day:'Tue', sales:2400, labor:25, target:{x:.38,y:.64}, title:'Compare trends without identifiers', explanation:'Tuesday rises to $2,400. Compare daily totals without exposing the guest list or item-level payment history. Real POS access would need a verified read-only account.' },
+  { id:'wednesday', day:'Wed', sales:3200, labor:31, target:{x:.60,y:.40}, title:'Do not infer employee performance', explanation:'Wednesday peaks at $3,200, with a synthetic labor-cost ratio of 31 percent. An aggregate ratio is not evidence about any employee. Payroll, names and individual shifts stay outside this example.' },
+  { id:'thursday', day:'Thu', sales:2700, labor:27, target:{x:.82,y:.55}, title:'Explain the limit before acting', explanation:'Thursday settles at $2,700. This synthetic graph is a walkthrough, not confidential-computing proof or a live forecast. No staffing change, order, wallet transaction or data upload is performed.' },
+] as const;
+export function graphIndex(value:number){return Math.max(0,Math.min(graphPoints.length-1,Math.trunc(value)||0));}
