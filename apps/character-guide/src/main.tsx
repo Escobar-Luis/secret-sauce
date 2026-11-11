@@ -8,6 +8,7 @@ import { loadHistory, recordVisit } from "./engine/history";
 import type { Snapshot } from "./engine/types";
 import "./style.css";
 import { RestaurantChat } from "./ui/RestaurantChat";
+import { NearGraph } from "./ui/NearGraph";
 import { RestaurantStory } from "./ui/RestaurantStory";
 import { SensitiveGraph } from "./ui/SensitiveGraph";
 import { artifact, pages, steps } from "./fixture";
@@ -105,6 +106,6 @@ function WalkthroughApp() {
     </div>
   );
 }
-function App(){const [view,setView]=useState(location.hash==='#restaurant-near'?'story':location.hash==='#sensitive-data'?'graph':'restaurant');const open=(v:string,hash:string)=>{setView(v);history.replaceState(null,'',hash);};return <><nav className="app-pages" aria-label="App pages"><button aria-current={view==='restaurant'?'page':undefined} onClick={()=>open('restaurant','#sales')}>Restaurant walkthrough</button><button aria-current={view==='graph'?'page':undefined} onClick={()=>open('graph','#sensitive-data')}>Sensitive-data graph</button><button aria-current={view==='story'?'page':undefined} onClick={()=>open('story','#restaurant-near')}>Restaurant AI, payments and staking</button></nav>{view==='story'?<RestaurantStory/>:view==='graph'?<SensitiveGraph/>:<WalkthroughApp/>}</>;}
+function App(){const [view,setView]=useState(location.hash==='#near-graph'?'near':location.hash==='#restaurant-near'?'story':location.hash==='#sensitive-data'?'graph':'restaurant');const open=(v:string,hash:string)=>{setView(v);history.replaceState(null,'',hash);};return <><nav className="app-pages" aria-label="App pages"><button aria-current={view==='restaurant'?'page':undefined} onClick={()=>open('restaurant','#sales')}>Restaurant walkthrough</button><button aria-current={view==='graph'?'page':undefined} onClick={()=>open('graph','#sensitive-data')}>Sensitive-data graph</button><button aria-current={view==='story'?'page':undefined} onClick={()=>open('story','#restaurant-near')}>Restaurant AI, payments and staking</button><button aria-current={view==='near'?'page':undefined} onClick={()=>open('near','#near-graph')}>NEAR graph walkthrough</button></nav>{view==='near'?<NearGraph/>:view==='story'?<RestaurantStory/>:view==='graph'?<SensitiveGraph/>:<WalkthroughApp/>}</>;}
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
