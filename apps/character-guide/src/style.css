@@ -41,3 +41,6 @@ small{color:var(--dim)}
 .demo-page .scope{font-size:13px;color:var(--dim);border-top:1px solid #999;padding-top:12px}
 input[type=file]{max-width:100%}.bar label{max-width:100%;margin-left:0!important}
 @media(max-width:500px){.demo-page dl{grid-template-columns:1fr}.demo-page{padding:14px}.demo-nav a{font-size:14px}}
+
+.scene-clips{margin:16px 24px;padding:12px;min-width:0}.scene-clips p{max-width:72ch}.scene-clips>div{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.scene-clips label{max-width:100%;overflow-wrap:anywhere}.scene-clips input{display:block;max-width:100%;width:260px}.scene-clips span{overflow-wrap:anywhere;max-width:100%}
+.layout>main,.layout>aside{min-width:0}.scene-clips legend{max-width:100%;white-space:normal;overflow-wrap:anywhere}
