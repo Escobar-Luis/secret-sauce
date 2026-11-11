@@ -5,9 +5,9 @@ export class MockNarrator implements Narrator {
   speak(text: string, { onWord, signal }: { onWord?: (i: number) => void; signal: AbortSignal }) {
     const words = text.split(/\s+/).filter(Boolean);
     return new Promise<void>((resolve, reject) => {
-      let i = 0;
+      let i = 0; const started = performance.now();
       const abort = () => { clearInterval(t); reject(new DOMException("aborted", "AbortError")); };
-      const t = setInterval(() => { const k = i++; onWord?.(k); if (i >= words.length) { clearInterval(t); signal.removeEventListener("abort", abort); resolve(); } }, 1000 / this.wordsPerSec);
+      const t = setInterval(() => { const due = Math.min(words.length, Math.floor((performance.now() - started) * this.wordsPerSec / 1000)); while (i < due) { onWord?.(i); i++; } if (i >= words.length) { clearInterval(t); signal.removeEventListener("abort", abort); resolve(); } }, 30);
       if (signal.aborted) return abort();
       signal.addEventListener("abort", abort, { once: true });
     });
