@@ -29,6 +29,7 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, StreamingResponse
 from starlette.routing import Route
 
+import lab
 from mcp.client import Client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
@@ -60,6 +61,7 @@ VAULT = Path(os.environ.get("SAUCE_VAULT_DIR", ROOT / "vault"))
 DATA_DIR = Path(os.environ.get("SAUCE_DATA_DIR", VAULT / "owner-files")).resolve()
 MEMORY_FILE = VAULT / "workspace" / "memory.md"
 PROPOSALS_FILE = VAULT / "memory-proposals.md"
+PLAYBOOK_FILE = VAULT / "playbook.md"
 SESSIONS_FILE = VAULT / "lessons" / "sessions.jsonl"
 PORT = int(os.environ.get("SAUCE_PORT") or os.environ.get("PORT") or "8790")
 MAX_ROUNDS = 8
@@ -67,7 +69,7 @@ MAX_TOOL_CHARS = 60_000
 
 # session_id -> {"messages": [...], "turns": [...]}
 SESSIONS: dict[str, dict[str, Any]] = {}
-# proposal_id -> {"text": str, "status": "pending" | "approved"}
+# proposal_id -> {"text": str, "status": "pending" | "approved", "kind": "memory" | "rule"}
 PROPOSALS: dict[str, dict[str, str]] = {}
 
 # ---------------------------------------------------------------- local tools
@@ -128,6 +130,7 @@ LOCAL_TOOLS = [
         },
     },
 ]
+LOCAL_TOOLS += [t for t in lab.LAB_TOOLS if t["function"]["name"] == "propose_playbook_rule"]
 LOCAL_NAMES = {t["function"]["name"] for t in LOCAL_TOOLS}
 
 
@@ -193,11 +196,24 @@ def run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, int | None, di
         if not text:
             return "Empty proposal.", 0, None
         pid = uuid.uuid4().hex[:8]
-        PROPOSALS[pid] = {"text": text, "status": "pending"}
+        PROPOSALS[pid] = {"text": text, "status": "pending", "kind": "memory"}
         PROPOSALS_FILE.parent.mkdir(parents=True, exist_ok=True)
         with PROPOSALS_FILE.open("a") as fh:
             fh.write(f"\n## Proposal {pid} ({dt.datetime.now().isoformat(timespec='seconds')}) - pending\n\n{text}\n")
-        return "Proposal saved. The owner will see an Approve button.", None, {"id": pid, "text": text}
+        return "Proposal saved. The owner will see an Approve button.", None, {"id": pid, "text": text, "kind": "memory"}
+    if name == "propose_playbook_rule":
+        rule = str(args.get("rule", "")).strip()
+        reason = str(args.get("reason", "")).strip()
+        if not rule:
+            return "Empty rule.", 0, None
+        pid = uuid.uuid4().hex[:8]
+        text = f"{rule} (why: {reason})" if reason else rule
+        PROPOSALS[pid] = {"text": text, "status": "pending", "kind": "rule"}
+        PROPOSALS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with PROPOSALS_FILE.open("a") as fh:
+            fh.write(f"\n## Rule proposal {pid} ({dt.datetime.now().isoformat(timespec='seconds')}) - pending\n\n{text}\n")
+        lab.add_event("rule_proposed", id=pid, text=text)
+        return "Rule proposal saved. The owner will see an Approve button.", None, {"id": pid, "text": text, "kind": "rule"}
     return f"Unknown tool {name}", 0, None
 
 
@@ -237,7 +253,7 @@ def system_prompt() -> str:
     return (
         "You are Secret Sauce, a private analyst for a small restaurant owner (Bondan's Bistro). "
         "You run inside NEAR AI Cloud's confidential environment. The owner's data stays private.\n\n"
-        "You can call tools: the Bistro's read-only Odoo tools (P&L, orders, POS sessions, cash differences, "
+        "You can call tools: the weight lab (lab_*) that teaches a small local student model on the owner's Mac, propose_playbook_rule, the Bistro's read-only Odoo tools (P&L, orders, POS sessions, cash differences, "
         "stock, bills, employees, attendance, maintenance, search_records), the owner's local files "
         "(list_files, read_file, search_files), and propose_memory_update.\n"
         "Rules: look at real data with tools before you answer. Cite numbers, dates and names you found. "
@@ -307,7 +323,7 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
             }
             for t in listed.tools
         ]
-        tools = mcp_tools + LOCAL_TOOLS
+        tools = mcp_tools + LOCAL_TOOLS + [t for t in lab.LAB_TOOLS if t["function"]["name"] in lab.LAB_NAMES]
 
         for rnd in range(MAX_ROUNDS):
             await send({"type": "thinking", "round": rnd + 1})
@@ -327,10 +343,16 @@ async def run_turn(session: dict, user_text: str, emit=None) -> dict:
                     args = json.loads(call["function"].get("arguments") or "{}")
                 except ValueError:
                     args = {}
-                entry = {"tool": name, "args": args, "source": "local" if name in LOCAL_NAMES else "bistro"}
+                source = "lab" if name in lab.LAB_NAMES else "local" if name in LOCAL_NAMES else "bistro"
+                entry = {"tool": name, "args": args, "source": source}
                 await send({"type": "tool_start", **entry})
                 try:
-                    if name in LOCAL_NAMES:
+                    if name in lab.LAB_NAMES:
+                        text = await lab.run_lab_tool(name, args)
+                        rows = None
+                        if text.startswith("Lab error") or '"error"' in text[:40]:
+                            entry["error"] = True
+                    elif name in LOCAL_NAMES:
                         text, rows, proposal = run_local_tool(name, args)
                         if proposal:
                             proposals.append(proposal)
@@ -385,7 +407,7 @@ async def index(_: Request):
 async def chat(request: Request):
     """Stream newline-delimited JSON events: thinking, tool_start, tool_done, then done or error."""
     body = await request.json()
-    text = str(body.get("message", "")).strip()
+    text = lab.TEACH_PROMPT if body.get("teach") else str(body.get("message", "")).strip()
     if not text:
         return JSONResponse({"error": "Empty message"}, status_code=400)
     sid = str(body.get("session_id") or uuid.uuid4().hex)
@@ -422,8 +444,15 @@ async def approve(request: Request):
     if not prop:
         return JSONResponse({"error": "Unknown proposal"}, status_code=404)
     if prop["status"] != "approved":
-        with MEMORY_FILE.open("a") as fh:
-            fh.write(f"\n\n## Learned {dt.date.today().isoformat()} (approved by owner)\n\n{prop['text']}\n")
+        if prop.get("kind") == "rule":
+            with PLAYBOOK_FILE.open("a") as fh:
+                fh.write(f"\n- **New rule ({dt.date.today().isoformat()}, approved by owner):** {prop['text']}\n")
+            with MEMORY_FILE.open("a") as fh:
+                fh.write(f"\n\n## Playbook rule {dt.date.today().isoformat()} (approved by owner)\n\n{prop['text']}\n")
+            lab.add_event("rule_approved", id=pid, text=prop["text"])
+        else:
+            with MEMORY_FILE.open("a") as fh:
+                fh.write(f"\n\n## Learned {dt.date.today().isoformat()} (approved by owner)\n\n{prop['text']}\n")
         with PROPOSALS_FILE.open("a") as fh:
             fh.write(f"\n_Proposal {pid} approved {dt.datetime.now().isoformat(timespec='seconds')}_\n")
         prop["status"] = "approved"
@@ -447,6 +476,14 @@ async def attestation(_: Request):
         return JSONResponse({"ok": resp.status_code == 200, "status": resp.status_code, "url": url})
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)[:200], "url": url})
+
+
+async def lab_events(request: Request):
+    try:
+        after = int(request.query_params.get("after", "0"))
+    except ValueError:
+        after = 0
+    return JSONResponse(lab.snapshot(after, PLAYBOOK_FILE, PROPOSALS))
 
 
 async def health(_: Request):
@@ -487,6 +524,7 @@ app = Starlette(
         Route("/api/end", end_session, methods=["POST"]),
         Route("/api/attestation", attestation),
         Route("/api/health", health),
+        Route("/api/lab/events", lab_events),
     ]
 )
 app.add_middleware(OriginGuard)
