@@ -5,9 +5,9 @@ export class MockNarrator implements Narrator {
   speak(text: string, { onWord, signal }: { onWord?: (i: number) => void; signal: AbortSignal }) {
     const words = text.split(/\s+/).filter(Boolean);
     return new Promise<void>((resolve, reject) => {
-      let i = 0;
+      let i = 0; const started = performance.now();
       const abort = () => { clearInterval(t); reject(new DOMException("aborted", "AbortError")); };
-      const t = setInterval(() => { const k = i++; onWord?.(k); if (i >= words.length) { clearInterval(t); signal.removeEventListener("abort", abort); resolve(); } }, 1000 / this.wordsPerSec);
+      const t = setInterval(() => { const due = Math.min(words.length, Math.floor((performance.now() - started) * this.wordsPerSec / 1000)); while (i < due) { onWord?.(i); i++; } if (i >= words.length) { clearInterval(t); signal.removeEventListener("abort", abort); resolve(); } }, 30);
       if (signal.aborted) return abort();
       signal.addEventListener("abort", abort, { once: true });
     });
@@ -40,11 +40,20 @@ export class AudioNarrator implements Narrator {
     ctx.createMediaElementSource(audio).connect(an); an.connect(ctx.destination);
     const buf = new Uint8Array(an.fftSize); let raf = 0;
     const tick = () => { an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += ((v - 128) / 128) ** 2; onLevel?.(Math.min(1, Math.sqrt(sum / buf.length) * 4)); raf = requestAnimationFrame(tick); };
-    const stop = () => { cancelAnimationFrame(raf); onLevel?.(0); audio.pause(); void ctx.close(); };
+    let settled = false;
     await new Promise<void>((resolve, reject) => {
-      signal.addEventListener("abort", () => { stop(); reject(new DOMException("aborted", "AbortError")); }, { once: true });
-      audio.onended = () => { stop(); resolve(); }; audio.onerror = () => { stop(); reject(new Error("audio failed")); };
-      audio.play().then(() => tick(), (e) => { stop(); reject(e); });
+      const finish = (error?: unknown) => {
+        if (settled) return; settled = true;
+        signal.removeEventListener("abort", abort); audio.onended = null; audio.onerror = null;
+        cancelAnimationFrame(raf); onLevel?.(0); audio.pause();
+        if (ctx.state !== "closed") void ctx.close().catch(() => {});
+        error ? reject(error) : resolve();
+      };
+      const abort = () => finish(new DOMException("aborted", "AbortError"));
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) return abort();
+      audio.onended = () => finish(); audio.onerror = () => finish(new Error("audio failed"));
+      audio.play().then(() => { if (!settled) tick(); }, finish);
     });
   }
 }

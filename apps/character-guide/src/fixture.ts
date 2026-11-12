@@ -1,9 +1,16 @@
 import type { Step } from "./engine/types";
-/** FIXTURE content (harmless, non-personal). Targets are stage coords 0..1 (x right, y down). */
-export const artifact = { id: "private-ai-pipeline", title: "How a private voice character works (fixture)" };
+/** Synthetic restaurant data only. No customer, employee or restaurant records. */
+export const artifact = { id: "restaurant-demo", title: "Secret Sauce: restaurant data demo" };
+export interface DemoPage { id: string; title: string; subtitle: string; rows: [string, string][]; takeaway: string; scope: string; }
+export const pages: DemoPage[] = [
+  { id: "sales", title: "Sales", subtitle: "Understand a service without exposing guest details", rows: [["Dinner sales", "$2,400"], ["Covers", "80"], ["Average check", "$30"]], takeaway: "Compare sales and covers before deciding whether a quiet service needs attention.", scope: "An actual connection would need approved POS access. No guest names, payment details or POS connection are included." },
+  { id: "inventory", title: "Inventory", subtitle: "See what may run short", rows: [["Tomatoes on hand", "12 kg"], ["Planned use", "8 kg"], ["Remaining after plan", "4 kg"]], takeaway: "A simple stock view can flag shortages before the next service.", scope: "These quantities are invented. No stock system is connected and no purchase order is placed." },
+  { id: "staffing", title: "Staffing", subtitle: "Plan coverage from totals, not personal records", rows: [["Planned team hours", "30 h"], ["Expected covers", "90"], ["Covers per team hour", "3"]], takeaway: "Review workload alongside team coverage before changing a schedule.", scope: "Aggregates only, with no names, pay rates, availability or individual performance. No schedule changes are made." },
+  { id: "suppliers", title: "Supplier costs", subtitle: "Spot changes in unit prices", rows: [["Previous olive oil price", "$8 / L"], ["Example new price", "$9 / L"], ["Change", "+12.5%"]], takeaway: "Compare the same unit and product before treating a price change as meaningful.", scope: "No real invoices or vendor terms are shown. This page does not contact suppliers or change an order." },
+];
 export const steps: Step[] = [
-  { id: "record", title: "1. Authorized recording", narration: "First, you record your own voice with permission. The recordings stay on your device and you keep the rights to them.", target: { x: 0.15, y: 0.3 } },
-  { id: "model", title: "2. Open-weight speech model", narration: "Next, an open weight speech model learns from those recordings. You can back it up and move it, so you are not locked into one vendor.", target: { x: 0.4, y: 0.45 } },
-  { id: "script", title: "3. Review the script", narration: "Then you write a script and approve it. Nothing is generated until you say so.", target: { x: 0.65, y: 0.3 } },
-  { id: "listen", title: "4. Listen and approve", narration: "Finally you listen, edit, and approve the audio. Only then does it go out as a voice memo.", target: { x: 0.88, y: 0.45 } },
+  { id: "sales", title: "1. Sales", narration: "This sales page uses invented totals, not real guest records. Eighty covers produced twenty four hundred dollars, averaging thirty dollars each. A restaurant owner could compare services without displaying customer names or payment card details.", target: { x: 0.15, y: 0.3 } },
+  { id: "inventory", title: "2. Inventory", narration: "This inventory example starts with twelve kilograms of tomatoes. The planned menu uses eight, leaving four. These synthetic figures explain stock planning only. Nothing connects to a stock system, orders ingredients, or reveals supplier credentials.", target: { x: 0.4, y: 0.45 } },
+  { id: "staffing", title: "3. Staffing", narration: "Here, thirty planned team hours support ninety expected covers, or three covers per hour. These invented aggregates help explain coverage. They contain no employee names, wages, or performance records, and they do not change schedules.", target: { x: 0.65, y: 0.3 } },
+  { id: "suppliers", title: "4. Supplier costs", narration: "This supplier example compares olive oil at eight and nine dollars per liter, a twelve point five percent increase. These prices are synthetic. No invoices are uploaded, vendors contacted, or orders changed by this demo.", target: { x: 0.88, y: 0.45 } },
 ];
