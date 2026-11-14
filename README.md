@@ -104,7 +104,7 @@ Python (Starlette, uvicorn, MCP SDK, MLX, mlx-lm), Qwen3-1.7B (Apache-2.0), Open
 
 ## Team
 
-Luis Escobar ([@Escobar-Luis](https://github.com/Escobar-Luis)), Bondan Herumurti ([@bherumurti](https://github.com/bherumurti)), [@adamaslan](https://github.com/adamaslan).
+Luis Escobar ([@Escobar-Luis](https://github.com/Escobar-Luis)), Bondan Herumurti ([@bherumurti](https://github.com/bherumurti)), [@adamaslan](https://github.com/adamaslan), Sahil Pardasani ([https://github.com/sahilpardasani)
 
 ## License
 
