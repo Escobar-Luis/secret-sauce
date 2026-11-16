@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secret Sauce: the big idea</title>
+<style>
+  :root { --bg: #0b1a33; --panel: #0f2244; --ink: #dfe8f5; --muted: #8aa0c0; --line: #24406e; --accent: #f5a524; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body { display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  h1 { font-size: 14px; margin: 0; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font: inherit; color: var(--muted); background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); background: #16305c; }
+  a { color: var(--muted); font-size: 12px; margin-left: auto; }
+  a:hover { color: var(--ink); }
+  iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Secret Sauce · the big idea</h1>
+  <nav role="tablist">
+    <button role="tab" data-src="big-idea.html" aria-selected="true">1 · Why: before and now</button>
+    <button role="tab" data-src="how-it-learns.html" aria-selected="false">2 · How NEAR teaches</button>
+    <button role="tab" data-src="road-to-alone.html" aria-selected="false">3 · Road to running alone (planned)</button>
+  </nav>
+  <a href="https://github.com/Escobar-Luis/secret-sauce">GitHub repo</a>
+</header>
+<iframe id="view" title="Chalk talk 1: Why, before and now" allow="autoplay"></iframe>
+<script>
+  const tabs = document.querySelectorAll('[role=tab]');
+  const view = document.getElementById('view');
+  const byHash = { '#big-idea': 'big-idea.html', '#how-it-learns': 'how-it-learns.html', '#road-to-alone': 'road-to-alone.html' };
+  function pick(src) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.src === src)));
+    const tab = [...tabs].find(t => t.dataset.src === src);
+    view.title = 'Chalk talk ' + tab.textContent;
+    if (view.getAttribute('src') !== src) view.src = src;
+    try { history.replaceState(null, '', '#' + src.replace('.html', '')); } catch (e) {}
+  }
+  // on first load, arrow keys, space and V go to the talk without a click (later tab clicks keep focus on the tabs)
+  view.addEventListener('load', () => { try { view.contentWindow.focus(); } catch (e) {} }, { once: true });
+  tabs.forEach(t => t.addEventListener('click', () => pick(t.dataset.src)));
+  addEventListener('hashchange', () => pick(byHash[location.hash] || 'big-idea.html'));
+  pick(byHash[location.hash] || 'big-idea.html');
+</script>
+</body>
+</html>
