@@ -1,0 +1,282 @@
+{
+  "title": "The road to running alone",
+  "subtitle": "what we plan next · not built yet",
+  "eyebrow": "Secret Sauce · the big idea · 3 of 3",
+  "lang": "en",
+  "style": "blueprint",
+  "theme": "dark",
+  "proof": false,
+  "voice": {
+    "voice": "af_heart",
+    "speed": 1.1
+  },
+  "nodes": [
+    {
+      "id": "owner",
+      "kind": "actor",
+      "label": "The owner",
+      "at": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "gate",
+      "kind": "box",
+      "label": "Secret Sauce",
+      "sub": "on the Mac",
+      "icon": "shield",
+      "at": [
+        1,
+        1
+      ],
+      "code": "apps/secret-sauce-web/server.py:336-436"
+    },
+    {
+      "id": "near",
+      "kind": "cloud",
+      "label": "NEAR AI Cloud",
+      "sub": "sealed model · TEE",
+      "icon": "lock",
+      "color": "violet",
+      "at": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": "student",
+      "kind": "box",
+      "label": "Local student",
+      "sub": "Qwen3-1.7B · on the Mac",
+      "icon": "bot",
+      "color": "teal",
+      "at": [
+        2,
+        1
+      ],
+      "code": "apps/weight-lab/weight_lab.py:1-20"
+    },
+    {
+      "id": "books",
+      "kind": "db",
+      "label": "Restaurant books",
+      "sub": "never leave the Mac",
+      "at": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": "chain",
+      "kind": "file",
+      "label": "Diploma",
+      "sub": "NEAR contract · planned",
+      "icon": "star",
+      "color": "amber",
+      "at": [
+        3,
+        1
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "ask",
+      "from": "owner",
+      "to": "gate",
+      "label": "asks",
+      "packet": "question"
+    },
+    {
+      "id": "think",
+      "from": "gate",
+      "to": "near",
+      "label": "NEAR answers",
+      "packet": "question"
+    },
+    {
+      "id": "local",
+      "from": "gate",
+      "to": "student",
+      "label": "student answers",
+      "style": "dashed",
+      "packet": "same question"
+    },
+    {
+      "id": "diploma",
+      "from": "student",
+      "to": "chain",
+      "label": "hash + scores",
+      "style": "dashed",
+      "packet": "passed"
+    },
+    {
+      "id": "read",
+      "from": "gate",
+      "to": "books",
+      "label": "read-only tools",
+      "packet": "rows"
+    },
+    {
+      "id": "tutor",
+      "from": "near",
+      "to": "student",
+      "label": "monthly",
+      "style": "dashed",
+      "packet": "new exams"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Today: NEAR does the work",
+      "say": "Today NEAR answers every question. The small model only learns, one lap at a time.",
+      "show": [
+        "ask",
+        "think"
+      ],
+      "flow": [
+        "ask",
+        "think",
+        {
+          "edge": "think",
+          "reverse": true,
+          "packet": "answer"
+        }
+      ],
+      "focus": [
+        "near"
+      ],
+      "notes": [
+        {
+          "on": "near",
+          "text": "built today",
+          "kind": "tag",
+          "tone": "ok"
+        }
+      ]
+    },
+    {
+      "title": "Next: the student answers too",
+      "say": "Planned: the small model answers the same questions in the background, so the Mac can compare it with NEAR.",
+      "show": [
+        "local"
+      ],
+      "flow": [
+        "local"
+      ],
+      "focus": [
+        "student"
+      ],
+      "notes": [
+        {
+          "on": "student",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "title": "Graduate",
+      "say": "Planned: once it passes its exams, a NEAR contract records a diploma. Only the model's hash and scores, no restaurant data.",
+      "show": [
+        "diploma"
+      ],
+      "flow": [
+        "diploma"
+      ],
+      "focus": [
+        "chain"
+      ],
+      "notes": [
+        {
+          "on": "chain",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "title": "Run it alone",
+      "say": "Planned: then the owner runs the small model alone. The gate still runs read-only tools, and the books never leave the Mac.",
+      "hide": [
+        "think"
+      ],
+      "show": [
+        "read"
+      ],
+      "flow": [
+        "ask",
+        "local",
+        "read"
+      ],
+      "focus": [
+        "books"
+      ],
+      "notes": [
+        {
+          "on": "student",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "title": "NEAR becomes a tutor",
+      "say": "Planned: once a month NEAR comes back as a tutor. It writes new exams and new lessons.",
+      "show": [
+        "tutor"
+      ],
+      "flow": [
+        "tutor"
+      ],
+      "focus": [
+        "near"
+      ],
+      "notes": [
+        {
+          "on": "near",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "title": "The big idea",
+      "say": "NEAR does the private work today, and teaches a small local model to do it tomorrow.",
+      "dim": false,
+      "flow": [
+        "ask",
+        "local",
+        "read",
+        "tutor"
+      ],
+      "active": [
+        "owner",
+        "gate",
+        "near",
+        "student",
+        "books",
+        "chain"
+      ],
+      "notes": [
+        {
+          "on": "student",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        },
+        {
+          "on": "chain",
+          "text": "planned",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    }
+  ]
+}

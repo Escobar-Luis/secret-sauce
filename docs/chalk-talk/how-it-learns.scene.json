@@ -1,0 +1,297 @@
+{
+  "title": "How NEAR teaches the local model",
+  "subtitle": "one \"Teach from this chat\" lap, as built today",
+  "eyebrow": "Secret Sauce · the big idea · 2 of 3",
+  "lang": "en",
+  "style": "blueprint",
+  "theme": "dark",
+  "voice": {
+    "voice": "af_heart",
+    "speed": 1.1,
+    "say_as": {
+      "0.309": "point three oh nine",
+      "0.132": "point one three two"
+    }
+  },
+  "nodes": [
+    {
+      "id": "page",
+      "kind": "browser",
+      "label": "Chat page",
+      "sub": "index.html · 🎓 Teach",
+      "at": [
+        0,
+        1
+      ],
+      "code": "apps/secret-sauce-web/index.html:236-246"
+    },
+    {
+      "id": "gate",
+      "kind": "box",
+      "label": "Gate server",
+      "sub": "server.py · run_turn()",
+      "icon": "shield",
+      "at": [
+        1,
+        1
+      ],
+      "code": {
+        "file": "apps/secret-sauce-web/server.py",
+        "lines": [
+          336,
+          436
+        ],
+        "mark": [
+          398,
+          404
+        ]
+      }
+    },
+    {
+      "id": "near",
+      "kind": "cloud",
+      "label": "NEAR (teacher)",
+      "sub": "sealed model · TEE",
+      "icon": "lock",
+      "color": "violet",
+      "at": [
+        1,
+        0
+      ],
+      "code": "apps/secret-sauce-web/lab.py:222-235"
+    },
+    {
+      "id": "lab",
+      "kind": "box",
+      "label": "Weight Lab",
+      "sub": "weight_lab.py · MLX",
+      "icon": "gear",
+      "color": "green",
+      "at": [
+        2,
+        1
+      ],
+      "code": "apps/weight-lab/weight_lab.py:1-20"
+    },
+    {
+      "id": "lessons",
+      "kind": "db",
+      "label": "Lessons",
+      "sub": "vault · lessons.jsonl",
+      "at": [
+        3,
+        1
+      ],
+      "code": "apps/weight-lab/weight_lab.py:218-233"
+    },
+    {
+      "id": "student",
+      "kind": "box",
+      "label": "Local student",
+      "sub": "Qwen3-1.7B",
+      "icon": "bot",
+      "color": "teal",
+      "at": [
+        2,
+        2
+      ],
+      "code": "apps/weight-lab/weight_lab.py:102-112"
+    }
+  ],
+  "edges": [
+    {
+      "id": "post",
+      "from": "page",
+      "to": "gate",
+      "num": 1,
+      "label": "POST",
+      "packet": "teach: true",
+      "code": "apps/secret-sauce-web/index.html:282",
+      "calls": "fetch(\"/api/chat\""
+    },
+    {
+      "id": "plan",
+      "from": "gate",
+      "to": "near",
+      "num": 2,
+      "label": "teaching plan",
+      "packet": "TEACH_PROMPT",
+      "code": "apps/secret-sauce-web/server.py:462-466",
+      "calls": "lab.TEACH_PROMPT if body.get(\"teach\")"
+    },
+    {
+      "id": "run",
+      "from": "gate",
+      "to": "lab",
+      "num": 3,
+      "label": "runs lab tool",
+      "packet": "add_lesson",
+      "code": "apps/secret-sauce-web/server.py:398-404",
+      "calls": "lab.run_lab_tool("
+    },
+    {
+      "id": "save",
+      "from": "lab",
+      "to": "lessons",
+      "num": 4,
+      "label": "save",
+      "packet": "2 + 1 exam",
+      "code": "apps/weight-lab/weight_lab.py:218-233",
+      "calls": "LESSONS.open(\"a\")"
+    },
+    {
+      "id": "lab2",
+      "from": "lab",
+      "to": "student",
+      "num": 5,
+      "label": "tests · edits",
+      "packet": "exam Q",
+      "code": {
+        "file": "apps/weight-lab/weight_lab.py",
+        "lines": [
+          243,
+          316
+        ],
+        "mark": [
+          291,
+          291
+        ]
+      },
+      "calls": [
+        "_student_answer(",
+        "score(ans",
+        "_apply_rank_one(model, layer, v, k, strength)",
+        "-last[\"strength\"]"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "title": "The owner asks for a lesson",
+      "say": "After a good answer, the owner clicks **Teach from this chat**. Nothing trains unless they ask.",
+      "show": [
+        "post"
+      ],
+      "flow": [
+        "post"
+      ],
+      "focus": [
+        "page"
+      ]
+    },
+    {
+      "title": "NEAR gets a teaching plan",
+      "say": "The gate sends NEAR a fixed teaching plan. NEAR never sees the student's weights.",
+      "show": [
+        "plan"
+      ],
+      "flow": [
+        "plan"
+      ],
+      "focus": [
+        "near"
+      ]
+    },
+    {
+      "title": "NEAR writes the lessons",
+      "say": "NEAR writes two lessons and one held-out exam question. The Mac saves them in the vault.",
+      "show": [
+        "run",
+        "save"
+      ],
+      "flow": [
+        {
+          "edge": "plan",
+          "reverse": true,
+          "packet": "lab_add_lesson"
+        },
+        "run",
+        "save"
+      ],
+      "focus": [
+        "lessons"
+      ]
+    },
+    {
+      "title": "Exam before",
+      "say": "The student takes the exam. Each answer gets a score from 0 to 1 against NEAR's answer.",
+      "show": [
+        "lab2"
+      ],
+      "flow": [
+        "lab2",
+        {
+          "edge": "lab2",
+          "reverse": true,
+          "packet": "score 0–1"
+        }
+      ],
+      "focus": [
+        "student"
+      ]
+    },
+    {
+      "title": "One small edit",
+      "say": "Then the Mac nudges one layer of the student's weights: a **rank-one edit**. A backup is saved first.",
+      "flow": [
+        {
+          "edge": "lab2",
+          "packet": "1 rank-one edit"
+        }
+      ],
+      "focus": [
+        "student"
+      ],
+      "notes": [
+        {
+          "on": "student",
+          "text": "backup saved first",
+          "kind": "tag",
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "title": "Exam after: keep or undo",
+      "say": "Same exam again. If the score drops, the plan tells NEAR to undo the edit. In lap 3 it fell from 0.309 to 0.132, and NEAR undid it.",
+      "flow": [
+        {
+          "edge": "lab2",
+          "packet": "exam Q"
+        },
+        {
+          "edge": "lab2",
+          "reverse": true,
+          "packet": "0.132"
+        },
+        {
+          "edge": "lab2",
+          "packet": "undo"
+        }
+      ],
+      "focus": [
+        "student"
+      ],
+      "notes": [
+        {
+          "on": "student",
+          "text": "lap 3: 0.309 → 0.132",
+          "kind": "tag",
+          "tone": "error"
+        }
+      ]
+    },
+    {
+      "title": "One lap",
+      "say": "Lessons, exam, edit, exam, keep or undo. NEAR only calls tools. All the math runs on the Mac.",
+      "recap": true,
+      "flow": [
+        "post",
+        "plan",
+        "run",
+        "save",
+        "lab2"
+      ]
+    }
+  ]
+}

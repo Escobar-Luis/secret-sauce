@@ -4,6 +4,31 @@ A private AI analyst for small restaurants. The owner chats with their own books
 
 Built at the NEAR Private AI Hackathon NYC, Nov 11 2026. Track: Privacy & Private AI.
 
+## The big idea
+
+Today an owner has to pick one: a smart AI that sees their private books, or a private AI too weak to help. Secret Sauce gives them both, in two stages.
+
+1. **Today, NEAR does the work and teaches (built).** A sealed model on NEAR AI Cloud reads the books through read-only tools on the owner's Mac. Only tool results leave the Mac. When the owner clicks **Teach**, NEAR turns a good answer into lessons and an exam, and the Mac makes one small, tested edit to a local model's weights.
+2. **Tomorrow, the Mac does it alone (planned, not built yet).** Once the local model passes its exams, the owner runs it alone, and NEAR becomes a monthly tutor.
+
+[![Watch the big idea (1:31)](docs/media/big-idea-poster.jpg)](docs/media/secret-sauce-big-idea.mp4)
+
+**[Watch the big idea (mp4, 1:31)](docs/media/secret-sauce-big-idea.mp4)** · **[Step through the chalk talk](https://escobar-luis.github.io/secret-sauce/chalk-talk/)** (3 parts, voiced; arrow keys to step, `V` shows which arrows are traced to code)
+
+![Chalk talk, part 1: why, before and now](docs/media/big-idea.gif)
+
+<details><summary>Video transcript</summary>
+
+A restaurant owner wants an AI that reads their books and finds real problems. But you can't paste sales, cash and payroll into a public chatbot. A small model on the Mac is private, but too weak on its own. Secret Sauce sends the thinking to NEAR AI Cloud, sealed in a TEE, a locked box. NEAR can't see the books. It asks for read-only tools, and only results go back. In the demo data it found $480 of cash-drawer shortages, growing every week. When the owner clicks Teach, NEAR turns an answer into lessons for a small model on the Mac.
+
+After a good answer, the owner clicks Teach. Nothing trains unless they ask. The gate sends NEAR a teaching plan. NEAR never sees the student's weights. NEAR writes two lessons and a held-out exam. The Mac saves them. The student takes the exam, scored from 0 to 1 against NEAR's answer. Then the Mac nudges one layer of its weights. A backup is saved first. Same exam again. If the score drops, the plan tells NEAR to undo the edit, as in lap 3.
+
+Today NEAR answers every question. The small model learns one lap at a time. Planned: the small model answers too, so the Mac can compare it with NEAR. Planned: when it passes, a NEAR contract records a diploma. No restaurant data. Planned: then the owner runs it alone. The books still never leave the Mac. Planned: once a month, NEAR comes back as a tutor with new exams. NEAR does the private work today, and teaches a small model to do it tomorrow.
+
+</details>
+
+## The demo
+
 [![Watch the 1-minute demo](docs/media/demo-poster.jpg)](docs/media/secret-sauce-demo.mp4)
 
 **[Watch the 1-minute demo (mp4, 59 s)](docs/media/secret-sauce-demo.mp4)**
@@ -89,7 +114,8 @@ The exam score is word overlap plus number match against NEAR's answer, on held-
 | `apps/character-guide/` | Teammate's walkthrough-character UI prototype (React/Vite). |
 | `Restaurant-MCP_GUIDE.md` | How to connect to the demo restaurant's read-only Odoo MCP. |
 | `HACKATHON.md` | The event's rules for coding agents. |
-| `docs/media/` | Demo video and poster. |
+| `docs/chalk-talk/` | The big-idea chalk talk: 3 voiced pages plus their `.scene.json` sources. Served by GitHub Pages. |
+| `docs/media/` | Big-idea video, demo video, posters and the chalk-talk GIF. |
 
 ## NEAR features used
 
@@ -100,11 +126,11 @@ The exam score is word overlap plus number match against NEAR's answer, on held-
 
 ## Built with
 
-Python (Starlette, uvicorn, MCP SDK, MLX, mlx-lm), Qwen3-1.7B (Apache-2.0), OpenCode for early analysis runs, and React/Vite for the character prototype. The demo restaurant is simulated Odoo data, not a real business. Code was written with AI coding agents during the event.
+Python (Starlette, uvicorn, MCP SDK, MLX, mlx-lm), Qwen3-1.7B (Apache-2.0), OpenCode for early analysis runs, and React/Vite for the character prototype. The big-idea chalk talk and video were made with the [chalk-talk](https://github.com/oztrkemree/chalk-talk) skill (MIT), the Kokoro voice model (Apache-2.0) running locally, and ffmpeg. The demo restaurant is simulated Odoo data, not a real business. Code was written with AI coding agents during the event.
 
 ## Team
 
-Luis Escobar ([@Escobar-Luis](https://github.com/Escobar-Luis)), Bondan Herumurti ([@bherumurti](https://github.com/bherumurti)), [@adamaslan](https://github.com/adamaslan), Sahil Pardasani ([https://github.com/sahilpardasani)
+Luis Escobar ([@Escobar-Luis](https://github.com/Escobar-Luis)), Bondan Herumurti ([@bherumurti](https://github.com/bherumurti)), [@adamaslan](https://github.com/adamaslan), Sahil Pardasani ([@sahilpardasani](https://github.com/sahilpardasani))
 
 ## License
 

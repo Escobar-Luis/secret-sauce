@@ -15,3 +15,6 @@ vault/
 .claude/worktrees/
 .claude/launch.json
 .claude/settings.local.json
+
+# BMad generated renders
+_bmad/render/

@@ -1,0 +1,290 @@
+{
+  "title": "Why: before and now",
+  "subtitle": "a private AI analyst for a small restaurant",
+  "eyebrow": "Secret Sauce · the big idea · 1 of 3",
+  "lang": "en",
+  "style": "blueprint",
+  "theme": "dark",
+  "proof": false,
+  "voice": {
+    "voice": "af_heart",
+    "speed": 1.1,
+    "say_as": {
+      "TEE": "T. E. E."
+    }
+  },
+  "nodes": [
+    {
+      "id": "owner",
+      "kind": "actor",
+      "label": "The owner",
+      "at": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "chatbot",
+      "kind": "cloud",
+      "label": "Public chatbot",
+      "color": "red",
+      "icon": "globe",
+      "at": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": "weak",
+      "kind": "box",
+      "label": "Small local model",
+      "sub": "alone, untrained",
+      "icon": "bot",
+      "color": "stone",
+      "at": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "gate",
+      "kind": "box",
+      "label": "Secret Sauce",
+      "sub": "gate server · on the Mac",
+      "icon": "shield",
+      "color": "green",
+      "at": [
+        2,
+        1
+      ],
+      "code": "apps/secret-sauce-web/server.py:1-10"
+    },
+    {
+      "id": "books",
+      "kind": "db",
+      "label": "Restaurant books",
+      "sub": "sales · cash · bills · pay",
+      "at": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": "near",
+      "kind": "cloud",
+      "label": "NEAR AI Cloud",
+      "sub": "sealed model · TEE",
+      "icon": "lock",
+      "color": "violet",
+      "at": [
+        4,
+        1
+      ],
+      "code": "apps/secret-sauce-web/server.py:56-58"
+    },
+    {
+      "id": "student",
+      "kind": "box",
+      "label": "Local student",
+      "sub": "Qwen3-1.7B · on the Mac",
+      "icon": "bot",
+      "color": "teal",
+      "at": [
+        4,
+        2
+      ],
+      "code": "apps/weight-lab/weight_lab.py:1-20"
+    }
+  ],
+  "edges": [
+    {
+      "id": "paste",
+      "from": "owner",
+      "to": "chatbot",
+      "label": "paste the books?",
+      "tone": "error",
+      "packet": "payroll"
+    },
+    {
+      "id": "askweak",
+      "from": "owner",
+      "to": "weak",
+      "label": "ask",
+      "tone": "muted",
+      "packet": "?"
+    },
+    {
+      "id": "ask",
+      "from": "owner",
+      "to": "gate",
+      "num": 1,
+      "label": "asks",
+      "packet": "cash drawer?"
+    },
+    {
+      "id": "think",
+      "from": "gate",
+      "to": "near",
+      "num": 2,
+      "label": "question + tool results",
+      "packet": "rows"
+    },
+    {
+      "id": "read",
+      "from": "gate",
+      "to": "books",
+      "num": 3,
+      "label": "read-only",
+      "packet": "cash diffs"
+    },
+    {
+      "id": "teach",
+      "from": "near",
+      "to": "student",
+      "num": 4,
+      "label": "teaches",
+      "style": "dashed",
+      "packet": "lessons"
+    }
+  ],
+  "steps": [
+    {
+      "title": "The goal",
+      "say": "A restaurant owner wants an AI that reads their books and finds real problems.",
+      "show": [
+        "owner",
+        "books"
+      ]
+    },
+    {
+      "title": "Smart, but not private",
+      "say": "The books hold sales, cash and payroll. You can't paste that into a public chatbot.",
+      "show": [
+        "paste"
+      ],
+      "flow": [
+        "paste"
+      ],
+      "focus": [
+        "chatbot"
+      ],
+      "notes": [
+        {
+          "on": "chatbot",
+          "text": "data leaves the shop",
+          "kind": "tag",
+          "tone": "error"
+        }
+      ]
+    },
+    {
+      "title": "Private, but too weak",
+      "say": "A small model on the Mac is private. But on its own it's too weak to find real problems.",
+      "show": [
+        "askweak"
+      ],
+      "flow": [
+        "askweak"
+      ],
+      "focus": [
+        "weak"
+      ],
+      "notes": [
+        {
+          "on": "weak",
+          "text": "misses the theft",
+          "kind": "tag",
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "title": "Now: smart and sealed",
+      "say": "Secret Sauce sends the thinking to NEAR AI Cloud. Its model runs sealed inside a TEE, a locked box.",
+      "hide": [
+        "chatbot",
+        "paste",
+        "weak",
+        "askweak"
+      ],
+      "show": [
+        "ask",
+        "think"
+      ],
+      "flow": [
+        "ask",
+        "think"
+      ],
+      "focus": [
+        "near"
+      ]
+    },
+    {
+      "title": "The books stay home",
+      "say": "NEAR can't see the books. It asks for read-only tools, and only their results go back.",
+      "show": [
+        "read"
+      ],
+      "flow": [
+        "read",
+        {
+          "edge": "think",
+          "packet": "rows"
+        }
+      ],
+      "focus": [
+        "gate"
+      ]
+    },
+    {
+      "title": "It finds the problem",
+      "say": "In the demo data it found $480 of cash-drawer shortages, growing every week since October 6.",
+      "flow": [
+        {
+          "edge": "think",
+          "reverse": true,
+          "packet": "$480 short"
+        },
+        {
+          "edge": "ask",
+          "reverse": true,
+          "packet": "answer"
+        }
+      ],
+      "focus": [
+        "owner"
+      ]
+    },
+    {
+      "title": "And it teaches",
+      "say": "When the owner clicks **Teach**, a good answer becomes a lesson. NEAR uses it to teach a small model on the Mac.",
+      "show": [
+        "teach"
+      ],
+      "flow": [
+        "teach"
+      ],
+      "focus": [
+        "student"
+      ]
+    },
+    {
+      "title": "Before and now",
+      "say": "Before: private or smart, pick one. Now: NEAR is smart and sealed today, and trains the local model for tomorrow.",
+      "flow": [
+        "ask",
+        "think",
+        "read",
+        "teach"
+      ],
+      "dim": false,
+      "active": [
+        "owner",
+        "gate",
+        "near",
+        "books",
+        "student"
+      ]
+    }
+  ]
+}
