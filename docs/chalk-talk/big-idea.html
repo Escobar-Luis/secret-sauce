@@ -696,7 +696,7 @@ html:not(.diff-before) .edge.chg-removed :is(.edge-line,.iso-path){stroke-dashar
     "start": 1,
     "end": 10,
     "text": "\"\"\"Secret Sauce gate server.\n\nA small local server between the chat page and NEAR AI Cloud.\n- The browser never sees the NEAR key. Only this process reads .env.\n- NEAR decides which tools to call. This server runs them and sends results back.\n- Tools: Bondan's Bistro MCP (read-only), local files in one folder (read-only),\n  and a memory proposal tool that needs the owner's approval.\n\nRun:  ~/dev/secret-sauce/.venv/bin/python apps/secret-sauce-web/server.py\n\"\"\"",
-    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/0144b5848f46360f7eebf74fd9d059b5f77f399d/apps/secret-sauce-web/server.py#L1-L10"
+    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/f686ba4d055ce01bb92aeb3e0f37887aab0bd170/apps/secret-sauce-web/server.py#L1-L10"
    }
   },
   {
@@ -725,7 +725,7 @@ html:not(.diff-before) .edge.chg-removed :is(.edge-line,.iso-path){stroke-dashar
     "start": 56,
     "end": 58,
     "text": "NEAR_BASE = os.environ.get(\"NEARAI_BASE_URL\") or \"https://cloud-api.near.ai/v1\"\nNEAR_MODEL = os.environ.get(\"NEARAI_MODEL\") or \"z-ai/glm-5.3-flash\"\nNEAR_KEY = os.environ.get(\"NEARAI_API_KEY\", \"\")",
-    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/0144b5848f46360f7eebf74fd9d059b5f77f399d/apps/secret-sauce-web/server.py#L56-L58"
+    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/f686ba4d055ce01bb92aeb3e0f37887aab0bd170/apps/secret-sauce-web/server.py#L56-L58"
    }
   },
   {
@@ -744,7 +744,7 @@ html:not(.diff-before) .edge.chg-removed :is(.edge-line,.iso-path){stroke-dashar
     "start": 1,
     "end": 20,
     "text": "\"\"\"Weight Lab: a local MCP server that lets a sealed teacher model (NEAR) edit a\nsmall student model's weights on this Mac.\n\nThe teacher never sees the weights or runs code here. It calls a few guarded\ntools; this process does the math locally and reports back short numbers.\n\nTools\n- add_lesson: store a (question, context, teacher_answer) example, train or exam.\n- ask_student: run the student on a question + context.\n- run_exam: student answers every exam lesson; local score vs the teacher.\n- teach: rank-one weight edit on one layer's MLP, pulling the student toward\n  the teacher's answers on the training lessons (a weight-space edit).\n- lora_train: fallback, a short LoRA run on the training lessons.\n- revert_last / list_edits / status.\n\nState (lessons, edit log, weight backups, adapter) lives in WEIGHT_LAB_DIR,\nwhich must be a git-ignored folder: lessons hold private business data.\n\"\"\"\n\nfrom __future__ import annotations",
-    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/0144b5848f46360f7eebf74fd9d059b5f77f399d/apps/weight-lab/weight_lab.py#L1-L20"
+    "url": "https://github.com/Escobar-Luis/secret-sauce/blob/f686ba4d055ce01bb92aeb3e0f37887aab0bd170/apps/weight-lab/weight_lab.py#L1-L20"
    }
   }
  ],
@@ -778,8 +778,8 @@ html:not(.diff-before) .edge.chg-removed :is(.edge-line,.iso-path){stroke-dashar
    "from": "gate",
    "to": "near",
    "num": 2,
-   "label": "question + tool results",
-   "packet": "rows"
+   "label": "asks NEAR",
+   "packet": "question"
   },
   {
    "id": "read",
@@ -844,7 +844,7 @@ html:not(.diff-before) .edge.chg-removed :is(.edge-line,.iso-path){stroke-dashar
    "notes": [
     {
      "on": "weak",
-     "text": "misses the theft",
+     "text": "too weak to find it",
      "kind": "tag",
      "tone": "warn"
     }

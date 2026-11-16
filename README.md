@@ -8,12 +8,12 @@ Built at the NEAR Private AI Hackathon NYC, Nov 11 2026. Track: Privacy & Privat
 
 Today an owner has to pick one: a smart AI that sees their private books, or a private AI too weak to help. Secret Sauce gives them both, in two stages.
 
-1. **Today, NEAR does the work and teaches (built).** A sealed model on NEAR AI Cloud reads the books through read-only tools on the owner's Mac. Only tool results leave the Mac. When the owner clicks **Teach**, NEAR turns a good answer into lessons and an exam, and the Mac makes one small, tested edit to a local model's weights.
+1. **Today, NEAR does the work and teaches (built).** A sealed model on NEAR AI Cloud reads the books through read-only tools on the owner's Mac. The books stay on the Mac: NEAR gets only the question, the house memory and what each tool returns. When the owner clicks **Teach**, NEAR turns a good answer into lessons and an exam, and the Mac makes one small, tested edit to a local model's weights.
 2. **Tomorrow, the Mac does it alone (planned, not built yet).** Once the local model passes its exams, the owner runs it alone, and NEAR becomes a monthly tutor.
 
-[![Watch the big idea (1:31)](docs/media/big-idea-poster.jpg)](docs/media/secret-sauce-big-idea.mp4)
+[![Watch the big idea (1:32)](docs/media/big-idea-poster.jpg)](docs/media/secret-sauce-big-idea.mp4)
 
-**[Watch the big idea (mp4, 1:31)](docs/media/secret-sauce-big-idea.mp4)** · **[Step through the chalk talk](https://escobar-luis.github.io/secret-sauce/chalk-talk/)** (3 parts, voiced; arrow keys to step, `V` shows which arrows are traced to code)
+**[Watch the big idea (mp4, 1:32)](docs/media/secret-sauce-big-idea.mp4)** · **[Step through the chalk talk](https://escobar-luis.github.io/secret-sauce/chalk-talk/)** (3 parts, voiced; arrow keys to step; in part 2, `V` shows which arrows are traced to code)
 
 ![Chalk talk, part 1: why, before and now](docs/media/big-idea.gif)
 
@@ -21,7 +21,7 @@ Today an owner has to pick one: a smart AI that sees their private books, or a p
 
 A restaurant owner wants an AI that reads their books and finds real problems. But you can't paste sales, cash and payroll into a public chatbot. A small model on the Mac is private, but too weak on its own. Secret Sauce sends the thinking to NEAR AI Cloud, sealed in a TEE, a locked box. NEAR can't see the books. It asks for read-only tools, and only results go back. In the demo data it found $480 of cash-drawer shortages, growing every week. When the owner clicks Teach, NEAR turns an answer into lessons for a small model on the Mac.
 
-After a good answer, the owner clicks Teach. Nothing trains unless they ask. The gate sends NEAR a teaching plan. NEAR never sees the student's weights. NEAR writes two lessons and a held-out exam. The Mac saves them. The student takes the exam, scored from 0 to 1 against NEAR's answer. Then the Mac nudges one layer of its weights. A backup is saved first. Same exam again. If the score drops, the plan tells NEAR to undo the edit, as in lap 3.
+After a good answer, the owner clicks Teach. Nothing trains unless they ask. The gate sends NEAR a teaching plan. NEAR never sees the student's weights. NEAR writes two lessons and a held-out exam. They join the lessons in the vault. The student answers every saved exam question, scored 0 to 1 by word and number overlap. Then the Mac nudges one layer of its weights. The edit is recorded so it can be reversed. Same exam again. If the average drops, the plan tells NEAR to undo the edit.
 
 Today NEAR answers every question. The small model learns one lap at a time. Planned: the small model answers too, so the Mac can compare it with NEAR. Planned: when it passes, a NEAR contract records a diploma. No restaurant data. Planned: then the owner runs it alone. The books still never leave the Mac. Planned: once a month, NEAR comes back as a tutor with new exams. NEAR does the private work today, and teaches a small model to do it tomorrow.
 
@@ -59,7 +59,7 @@ flowchart LR
    - The Mac tests the local Qwen3-1.7B student.
    - The Mac edits one layer of the student's weights: a rank-one edit to the MLP `down_proj`.
    - The Mac tests the student again.
-   - If the score drops, the edit is undone.
+   - If the score drops, the teaching plan tells NEAR to undo the edit.
 
    NEAR never touches the weights. It only calls the lab's tools.
 6. **Graduate (the plan).** Once the local model passes its exams, the owner runs it alone. NEAR becomes a monthly tutor: it writes new exams and lessons.
@@ -80,9 +80,9 @@ Limits we know about: a TEE protects data while NEAR uses it, but it doesn't mak
 |---|---|---|---|
 | 1 | 0.357 | 0.357 | kept, no change |
 | 2 | 0.24 | 0.35 | kept |
-| 3 | 0.309 | 0.132 | undone automatically |
+| 3 | 0.309 | 0.132 | undone by NEAR, as the teaching plan says |
 
-The exam score is word overlap plus number match against NEAR's answer, on held-out questions. These laps show that the loop works and that it guards itself. They don't prove the student has graduated.
+The exam score is word overlap plus number match against NEAR's answer, on held-out questions. These laps show that the loop works and that a bad edit gets undone. They don't prove the student has graduated.
 
 ## Try it (Apple Silicon Mac, Python 3.12)
 

@@ -64,6 +64,33 @@ Decisions (Luis, 2026-11-16): big idea confirmed as stated; video about 90 secon
 - Given the video, when watched muted, then captions carry the story and planned parts read "planned".
 - Given the README on GitHub, when opened, then the big idea appears before the demo and all media links resolve.
 
+### Review Findings
+
+- [x] [Review][Patch] README now contradicts itself on who undoes a bad edit ("undone automatically", "guards itself" vs "the plan tells NEAR") [README.md:62,83,85]
+- [x] [Review][Patch] "A backup is saved first" overstates: teach() saves only the edit's v/k vectors; revert applies the opposite edit [docs/chalk-talk/how-it-learns.scene.json step 5; weight_lab.py:289,312]
+- [x] [Review][Patch] Talk 2 hides NEAR's tool calls during exam, edit and undo, so the Mac looks like it runs the loop alone [docs/chalk-talk/how-it-learns.scene.json steps 4-6]
+- [x] [Review][Patch] Exam and edit cover all lessons saved so far, not only this lap's; the score is word + number overlap, not % correct [how-it-learns steps 3-4; weight_lab.py:129,243-258]
+- [x] [Review][Patch] Talk 1 tag "misses the theft" is unsupported (no such run; the data shows shortages, not theft) [docs/chalk-talk/big-idea.scene.json step 3]
+- [x] [Review][Patch] "Only tool results leave the Mac" is too broad: the question, memory file and teaching plan also go to NEAR [README.md:25; server.py:281-294]
+- [x] [Review][Patch] README says V shows traced arrows for all 3 parts; only part 2 is traced [README.md:29]
+- [x] [Review][Patch] Transcript "as in lap 3" comes before laps are explained [README.md transcript, video line]
+- [x] [Review][Patch] Talk 1 edge #2 says "question + tool results" before the books are read [big-idea.scene.json edge think]
+- [x] [Review][Patch] Student code anchor 102-112 runs past _student_answer (102-105) [how-it-learns.scene.json node student]
+- [x] [Review][Patch] Tab click moves focus into the iframe, so keyboard users lose their place in the tab list [docs/chalk-talk/index.html:47]
+- [x] [Review][Patch] Chalk-talk check snapshots are not git-ignored [.gitignore]
+- [x] [Review][Defer] No CI re-checks the scenes' code traces after app edits [docs/chalk-talk/*.scene.json] — deferred: already in deferred-work.md; needs vendored build scripts or CI
+- [x] [Review][Defer] GitHub Pages link 404s until Pages is on [README.md:29] — deferred: maybe-false; settled by enabling Pages right after merge and loading the URL
+
+Rejected:
+- Spec notes say 1:29, Verification lacks CHALK_SHARE=1, empty change log (fix edits the spec under review)
+- No explicit GIF fallback (low; the GIF is always shown under the link, which serves as the fallback)
+- Section is a list, not one paragraph (low; split on purpose in the build review to separate built from planned)
+- Rebuild steps not reproducible outside Luis's setup (low; build note links the open-source skill; video scripts live with his other videos)
+- ARIA tab pattern gaps beyond focus (low; adds keyboard machinery for a 3-tab page)
+- Hash with odd case or step suffix opens talk 1 (low; nobody shares such links)
+- pick() with unknown src throws (false; byHash maps only to the three tab srcs and the default)
+- Muted captions not watched by the auditor (false; captions come from the same text, and Luis watched drafts 1 and 2)
+
 ## Implementation Notes
 
 - Implemented in the lead session, not a fresh subagent: Luis asked to see short pieces and react as they were made, which a subagent cannot do.

@@ -95,7 +95,7 @@
         2,
         2
       ],
-      "code": "apps/weight-lab/weight_lab.py:102-112"
+      "code": "apps/weight-lab/weight_lab.py:102-105"
     }
   ],
   "edges": [
@@ -194,7 +194,7 @@
     },
     {
       "title": "NEAR writes the lessons",
-      "say": "NEAR writes two lessons and one held-out exam question. The Mac saves them in the vault.",
+      "say": "NEAR writes two lessons and one held-out exam question. They join the lessons already saved in the vault.",
       "show": [
         "run",
         "save"
@@ -214,11 +214,20 @@
     },
     {
       "title": "Exam before",
-      "say": "The student takes the exam. Each answer gets a score from 0 to 1 against NEAR's answer.",
+      "say": "The student answers every saved exam question. Each answer is scored 0 to 1 by word and number overlap with NEAR's.",
       "show": [
         "lab2"
       ],
       "flow": [
+        {
+          "edge": "plan",
+          "reverse": true,
+          "packet": "lab_run_exam"
+        },
+        {
+          "edge": "run",
+          "packet": "run_exam"
+        },
         "lab2",
         {
           "edge": "lab2",
@@ -232,8 +241,17 @@
     },
     {
       "title": "One small edit",
-      "say": "Then the Mac nudges one layer of the student's weights: a **rank-one edit**. A backup is saved first.",
+      "say": "Then the Mac nudges one layer of the student's weights: a **rank-one edit**. The edit is recorded so it can be reversed.",
       "flow": [
+        {
+          "edge": "plan",
+          "reverse": true,
+          "packet": "lab_teach"
+        },
+        {
+          "edge": "run",
+          "packet": "teach"
+        },
         {
           "edge": "lab2",
           "packet": "1 rank-one edit"
@@ -245,7 +263,7 @@
       "notes": [
         {
           "on": "student",
-          "text": "backup saved first",
+          "text": "edit recorded",
           "kind": "tag",
           "tone": "info"
         }
@@ -253,16 +271,21 @@
     },
     {
       "title": "Exam after: keep or undo",
-      "say": "Same exam again. If the score drops, the plan tells NEAR to undo the edit. In lap 3 it fell from 0.309 to 0.132, and NEAR undid it.",
+      "say": "Same exam again. If the average drops, the plan tells NEAR to undo the edit. Once it fell from 0.309 to 0.132, and NEAR undid it.",
       "flow": [
         {
           "edge": "lab2",
-          "packet": "exam Q"
+          "packet": "exam"
         },
         {
           "edge": "lab2",
           "reverse": true,
           "packet": "0.132"
+        },
+        {
+          "edge": "plan",
+          "reverse": true,
+          "packet": "lab_revert_last"
         },
         {
           "edge": "lab2",
@@ -275,7 +298,7 @@
       "notes": [
         {
           "on": "student",
-          "text": "lap 3: 0.309 → 0.132",
+          "text": "0.309 → 0.132",
           "kind": "tag",
           "tone": "error"
         }
